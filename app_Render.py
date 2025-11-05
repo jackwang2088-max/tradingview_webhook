@@ -16,8 +16,8 @@ app = Flask(__name__)
 # TELEGRAM_TOKEN：Telegram Bot Token
 # CHAT_ID：Telegram 收訊聊天 ID
 # ==========================
-TELEGRAM_TOKEN = os.environ.get("8359395795:AAFywYmUfYeZlwGkUW-gBLNtcexoXUP-haA")
-CHAT_ID = os.environ.get("831846934")
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
+CHAT_ID = os.environ.get("CHAT_ID")
 
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
@@ -81,3 +81,4 @@ def webhook():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
