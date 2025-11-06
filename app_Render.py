@@ -97,6 +97,16 @@ def test_telegram():
 
 # ==========================
 # Webhook 接收 TradingView 訊息
+# 它是一個 Flask 路由裝飾器（decorator）。代表「任何 HTTP POST 請求送到 /webhook，都會觸發下面的函數」。它本身不限制來源，只是定義路徑跟方法。
+# 在 TradingView 裡，你設定 webhook URL 時，可以設定一個 JSON 內容，例如：
+# {
+#   "signal": "1分SAR做空_open",
+#   "symbol": "TXF1!",
+#   "price": 28071,
+#   "time": "2025-11-06T05:28:00Z"
+#  }
+# 這個 JSON 就是「你在 TradingView Webhook 的訊息欄裡寫的內容」。
+# 當 TV 觸發時，它會以 HTTP POST 把這個 JSON 送到 https://你的伺服器/webhook。
 # ==========================
 @app.route('/webhook', methods=['POST'])
 def webhook():
@@ -104,20 +114,22 @@ def webhook():
     接收 TradingView 的 Webhook JSON 並翻譯後轉發到 Telegram
     """
     try:
-        # 強制解析 JSON
+        # 強制把 POST body 當 JSON 解析成 Python dict。
         data = request.get_json(force=True)
-        print("📩 收到 TradingView 資料:", data)
+        print(f"📩 收到 TradingView 資料轉成 Python字典:", {data}")
 
-        # 組成訊息文字# Telegram 訊息
+        # 把Python dict串接組成訊息文字
         original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
-
-        # ===== 即時翻譯訊息 =====
+        print(f"📩 把Python dict串接組成訊息文字 :", {original_msg}")
+        
+        # ===== 把接組成訊息文字透過translate_text即時翻譯訊息 =====
         translated_msg = translate_text(original_msg)
-
-        # ===== 發送翻譯後訊息到 Telegram =====
+        print(f"📩 把傳送給Telegram 資料即時翻譯 :", {translated_msg}")
+        
+        # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息發送到 Telegram =====
         send_to_telegram(translated_msg)
         
-        # ===== 傳送到本地語音端 =====
+        # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息傳送到本地語音端 =====
         send_to_local_speaker(data)
         
         
@@ -133,6 +145,7 @@ def webhook():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
