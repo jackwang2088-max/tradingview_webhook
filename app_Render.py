@@ -142,8 +142,8 @@ def webhook():
     send_to_telegram(json.dumps(data, ensure_ascii=False))
     
     # ======= 同步傳送至本地語音端 =======
-    local_data = data.copy()      # 加上事件編號供本地顯示
-    local_data["id"] = event_id  # 加上事件編號供本地顯示
+    #local_data = data.copy()      # 加上事件編號供本地顯示
+    #local_data["id"] = event_id  # 加上事件編號供本地顯示
     send_to_local_speaker(data)
     return jsonify({"status": "success"}), 200
 
@@ -211,6 +211,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
