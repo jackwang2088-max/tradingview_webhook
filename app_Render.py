@@ -119,77 +119,114 @@ event_id = 0
 # ==========================
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    """
+    接收 TradingView 的 Webhook JSON 並翻譯後轉發到 Telegram + 本地語音端
+    每次接收到 TradingView 發出的 JSON 時，會：
+    1️⃣ 把資料轉成 Python dict。
+    2️⃣ 組成訊息文字。
+    3️⃣ 使用 Google 翻譯。
+    4️⃣ 發送到 Telegram。
+    5️⃣ 發送到本地語音端。
+    6️⃣ 儲存事件編號於 event_queue（供 local_speaker 播報）。
+    """
     global event_id
-    data = request.get_json(force=True)
-    
-    # 🔐 加鎖確保多線程安全
-    with lock:
-        event_id += 1
-        event_queue.append({"id": event_id, "data": data})
-         # 🔹 用法與功能：
-            # with lock: 表示進入一個鎖定區塊，確保這段程式碼同一時間只會被一個線程執行
-            # last_event["id"] += 1 : 每收到一個新的 webhook 事件就讓事件 ID +1
-            # last_event["data"] = data : 儲存目前事件資料供本地端輪詢讀取
-        
-    # ======= 建立要傳給 Telegram 的訊息格式 =======
-    # ----------------------------------------------------
-    # 🔔 Telegram 推播格式改為「台指通知機器人 + 編號」
-    # ----------------------------------------------------
-    json_text = json.dumps(data, ensure_ascii=False)
-    telegram_message = f"台指通知機器人:\n編號:{event_id}\n{json_text}"
-    
-    # ======= 傳送至 Telegram =======
-    send_to_telegram(json.dumps(data, ensure_ascii=False))
-    
-    # ======= 同步傳送至本地語音端 =======
-    #local_data = data.copy()      # 加上事件編號供本地顯示
-    #local_data["id"] = event_id  # 加上事件編號供本地顯示
-    send_to_local_speaker(data)
-    return jsonify({"status": "success"}), 200
-
-    
-    
-    """
-    接收 TradingView 的 Webhook JSON 並翻譯後轉發到 Telegram
-    """
     try:
-        # 強制把 POST body 當 JSON 解析成 Python dict。
+         # ===== Step 1. 強制把 POST body 當 JSON 解析成 Python dict。data =====        
         data = request.get_json(force=True)
         print(f"📩 收到 TradingView 資料轉成 Python字典: {data}")
-
-        # 把Python dict串接組成訊息文字
+        
+        # ===== Step 2. 把Python dict data串接組成訊息文字original_msg =====
         original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
         print(f"📩 把Python dict串接組成訊息文字 : {original_msg}")
-
-        # 記錄事件
-        with lock:
-            last_event["id"] += 1
-            last_event["data"] = data
-            #🔹 用法與功能 with lock:
-            #表示進入一個鎖定區塊，確保這段程式碼在任何時候只有一個線程可以執行。
-            #執行完畢後自動釋放鎖。
-            #last_event["id"] += 1
-            #每收到一個新的 webhook 事件就讓事件 ID +1，方便 local_poller 判斷「哪些事件是新事件」。
-            #last_event["data"] = data
-            #把剛收到的 webhook JSON 資料存到全局事件資料裡，讓 local_poller.py 輪詢時可以讀取。
         
-        # ===== 把接組成訊息文字透過translate_text即時翻譯訊息 =====
+         # ===== Step 3. 把original_msg接組成訊息文字透過translate_text即時翻譯訊息translated_msg =====
         translated_msg = translate_text(original_msg)
         print(f"📩 把傳送給Telegram 資料即時翻譯 : {translated_msg}")
         
-        # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息發送到 Telegram =====
-        send_to_telegram(translated_msg)
+        # ===== Step 4. 建立事件編號並存入佇列 =====
+        # 🔐 加鎖確保多線程安全
+        with lock:
+            event_id += 1
+            event_queue.append({"id": event_id, "data": data})
+             # 🔹 用法與功能：
+                # with lock: 表示進入一個鎖定區塊，確保這段程式碼同一時間只會被一個線程執行
+                # last_event["id"] += 1 : 每收到一個新的 webhook 事件就讓事件 ID +1
+                # last_event["data"] = data : 儲存目前事件資料供本地端輪詢讀取
         
-        # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息傳送到本地語音端 =====
+        # ===== Step 5. 把接組成訊息文字透過translate_text即時翻譯訊息translated_msg發送到 Telegram 建立整理要傳給 Telegram 訊息格式（含編號與翻譯）telegram_message=====    
+        # ----------------------------------------------------
+        # 🔔 Telegram 推播格式改為「台指通知機器人 + 編號」
+        # ----------------------------------------------------
+        #json_text = json.dumps(data, ensure_ascii=False)
+        #telegram_message = f"台指通知機器人:\n編號:{event_id}\n{json_text}"
+        telegram_message = (
+            f"台指通知機器人:\n"
+            f"編號:{event_id}\n"
+            f"{json.dumps(data, ensure_ascii=False)}\n\n"
+            f"🈯翻譯內容:\n{translated_msg}"
+        )
+        
+        # ======= 把 Telegram 推播格式改為「台指通知機器人 + 編號」即時翻譯訊息telegram_message發送到 Telegram=======
+        #send_to_telegram(json.dumps(data, ensure_ascii=False))
+        send_to_telegram(telegram_message)
+        
+        # ======= 同步傳送至本地語音端  把接組成訊息文字透過translate_text即時翻譯訊息傳送到本地語音端 =======
+        local_data = data.copy()      # 加上事件編號供本地顯示
+        local_data["id"] = event_id  # 加上事件編號供本地顯示
         send_to_local_speaker(data)
-        
-        
-        # 回傳成功訊息
-        #return jsonify({"status": "success", "message": "Data received"}), 200
         return jsonify({"status": "success", "message": "已發送到 Telegram + 語音端"}), 200
+
     except Exception as e:
-        print("❌ Webhook 錯誤:", e)
-        return jsonify({"status": "error", "message": str(e)}), 500
+    print("❌ Webhook 錯誤:", e)
+    return jsonify({"status": "error", "message": str(e)}), 500
+    
+# =============================================================================
+# 
+# 
+#     """
+#     接收 TradingView 的 Webhook JSON 並翻譯後轉發到 Telegram
+#     """
+#     try:
+#         # 強制把 POST body 當 JSON 解析成 Python dict。
+#         data = request.get_json(force=True)
+#         print(f"📩 收到 TradingView 資料轉成 Python字典: {data}")
+# 
+#         # 把Python dict串接組成訊息文字
+#         original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
+#         print(f"📩 把Python dict串接組成訊息文字 : {original_msg}")
+# 
+#         # 記錄事件
+#         with lock:
+#             last_event["id"] += 1
+#             last_event["data"] = data
+#             #🔹 用法與功能 with lock:
+#             #表示進入一個鎖定區塊，確保這段程式碼在任何時候只有一個線程可以執行。
+#             #執行完畢後自動釋放鎖。
+#             #last_event["id"] += 1
+#             #每收到一個新的 webhook 事件就讓事件 ID +1，方便 local_poller 判斷「哪些事件是新事件」。
+#             #last_event["data"] = data
+#             #把剛收到的 webhook JSON 資料存到全局事件資料裡，讓 local_poller.py 輪詢時可以讀取。
+#         
+#         # ===== 把接組成訊息文字透過translate_text即時翻譯訊息 =====
+#         translated_msg = translate_text(original_msg)
+#         print(f"📩 把傳送給Telegram 資料即時翻譯 : {translated_msg}")
+#         
+#         # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息發送到 Telegram =====
+#         send_to_telegram(translated_msg)
+#         
+#         # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息傳送到本地語音端 =====
+#         send_to_local_speaker(data)
+#         
+#         
+#         # 回傳成功訊息
+#         #return jsonify({"status": "success", "message": "Data received"}), 200
+#         return jsonify({"status": "success", "message": "已發送到 Telegram + 語音端"}), 200
+#     except Exception as e:
+#         print("❌ Webhook 錯誤:", e)
+#         return jsonify({"status": "error", "message": str(e)}), 500
+# 
+# =============================================================================
+
 
 
  
@@ -211,6 +248,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
