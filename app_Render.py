@@ -121,11 +121,22 @@ event_id = 0
 def webhook():
     global event_id
     data = request.get_json(force=True)
+    
+    # 🔐 加鎖確保多線程安全
     with lock:
         event_id += 1
         event_queue.append({"id": event_id, "data": data})
-    # Telegram + 本地語音
+        
+    # ======= 建立要傳給 Telegram 的訊息格式 =======
+    json_text = json.dumps(data, ensure_ascii=False)
+    telegram_message = f"台指通知機器人:\n編號:{event_id}\n{json_text}"
+    
+    # ======= 傳送至 Telegram =======
     send_to_telegram(json.dumps(data, ensure_ascii=False))
+    
+    # ======= 同步傳送至本地語音端 =======
+    local_data = data.copy()      # 加上事件編號供本地顯示
+    local_data["id"] = event_id  # 加上事件編號供本地顯示
     send_to_local_speaker(data)
     return jsonify({"status": "success"}), 200
     """
@@ -188,6 +199,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
