@@ -100,7 +100,9 @@ def test_telegram():
 # 全局事件鎖與事件資料
 # ==========================
 lock = threading.Lock()     #建立一個 鎖（Lock）物件，用來確保多線程存取共享資料時不會同時修改造成衝突。
-last_event = {"id": 0, "data": None}  #建立一個全局字典，記錄最新的 webhook 事件資料：• "id"：事件序號，每收到一次 webhook 就 +1     • "data"：實際收到的 JSON 資料
+event_queue = []  # 存所有事件
+#last_event = {"id": 0, "data": None}  #建立一個全局字典，記錄最新的 webhook 事件資料：• "id"：事件序號，每收到一次 webhook 就 +1     • "data"：實際收到的 JSON 資料
+event_id = 0
 
 # ==========================
 # Webhook 接收 TradingView 訊息
@@ -117,6 +119,15 @@ last_event = {"id": 0, "data": None}  #建立一個全局字典，記錄最新�
 # ==========================
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    global event_id
+    data = request.get_json(force=True)
+    with lock:
+        event_id += 1
+        event_queue.append({"id": event_id, "data": data})
+    # Telegram + 本地語音
+    send_to_telegram(json.dumps(data, ensure_ascii=False))
+    send_to_local_speaker(data)
+    return jsonify({"status": "success"}), 200
     """
     接收 TradingView 的 Webhook JSON 並翻譯後轉發到 Telegram
     """
@@ -168,7 +179,8 @@ def webhook():
 def get_latest_event():
     """提供 local_poller.py 取得最新事件的 API"""
     with lock:
-        return jsonify(last_event)
+        #return jsonify(last_event)
+        return jsonify(event_queue)  # ✅ 回傳所有事件
         
 # ==========================
 # 程式入口
@@ -176,6 +188,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
