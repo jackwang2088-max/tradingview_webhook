@@ -123,11 +123,11 @@ def webhook():
     try:
         # 強制把 POST body 當 JSON 解析成 Python dict。
         data = request.get_json(force=True)
-        print(f"📩 收到 TradingView 資料轉成 Python字典:", {data}")
+        print(f"📩 收到 TradingView 資料轉成 Python字典: {data}")
 
         # 把Python dict串接組成訊息文字
         original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
-        print(f"📩 把Python dict串接組成訊息文字 :", {original_msg}")
+        print(f"📩 把Python dict串接組成訊息文字 : {original_msg}")
 
         # 記錄事件
         with lock:
@@ -143,7 +143,7 @@ def webhook():
         
         # ===== 把接組成訊息文字透過translate_text即時翻譯訊息 =====
         translated_msg = translate_text(original_msg)
-        print(f"📩 把傳送給Telegram 資料即時翻譯 :", {translated_msg}")
+        print(f"📩 把傳送給Telegram 資料即時翻譯 : {translated_msg}")
         
         # ===== 把把接組成訊息文字透過translate_text即時翻譯訊息發送到 Telegram =====
         send_to_telegram(translated_msg)
@@ -176,6 +176,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
