@@ -94,6 +94,11 @@ def test_telegram():
     send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
     return "✅ 測試訊息已發送至 Telegram"
 
+# ==========================
+# 全局事件鎖與事件資料
+# ==========================
+lock = threading.Lock()     #建立一個 鎖（Lock）物件，用來確保多線程存取共享資料時不會同時修改造成衝突。
+last_event = {"id": 0, "data": None}  #建立一個全局字典，記錄最新的 webhook 事件資料：• "id"：事件序號，每收到一次 webhook 就 +1     • "data"：實際收到的 JSON 資料
 
 # ==========================
 # Webhook 接收 TradingView 訊息
@@ -121,6 +126,18 @@ def webhook():
         # 把Python dict串接組成訊息文字
         original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
         print(f"📩 把Python dict串接組成訊息文字 :", {original_msg}")
+
+        # 記錄事件
+        with lock:
+            last_event["id"] += 1
+            last_event["data"] = data
+            #🔹 用法與功能 with lock:
+            #表示進入一個鎖定區塊，確保這段程式碼在任何時候只有一個線程可以執行。
+            #執行完畢後自動釋放鎖。
+            #last_event["id"] += 1
+            #每收到一個新的 webhook 事件就讓事件 ID +1，方便 local_poller 判斷「哪些事件是新事件」。
+            #last_event["data"] = data
+            #把剛收到的 webhook JSON 資料存到全局事件資料裡，讓 local_poller.py 輪詢時可以讀取。
         
         # ===== 把接組成訊息文字透過translate_text即時翻譯訊息 =====
         translated_msg = translate_text(original_msg)
@@ -139,12 +156,25 @@ def webhook():
     except Exception as e:
         print("❌ Webhook 錯誤:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
+
+
+# ==========================
+# 本地端輪詢查詢最新事件
+# local_poller.py 將透過 /events/latest 拉取事件
+# ==========================
+@app.route('/events/latest', methods=['GET'])
+def get_latest_event():
+    """提供 local_poller.py 取得最新事件的 API"""
+    with lock:
+        return jsonify(last_event)
+        
 # ==========================
 # 程式入口
 # ==========================
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
