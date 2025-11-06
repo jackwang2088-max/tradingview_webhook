@@ -18,12 +18,16 @@ app = Flask(__name__)
 # ==========================
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
 CHAT_ID = os.environ.get("CHAT_ID")
+LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL")  # ✅ 新增：本地端語音服務 URL，例如 http://192.168.0.40:10000/speak
 
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
+if not LOCAL_SPEAKER_URL:                              # ✅ 新增：
+    print("⚠️ 尚未設定 LOCAL_SPEAKER_URL（本地語音推播端 URL）")# ✅ 新增：
+
 
 # ==========================
-# 定義 Telegram 傳訊函式
+# 定義 Telegram 傳訊函式send_to_telegram
 # ==========================
 def send_to_telegram(message: str):
     """將訊息發送到 Telegram"""
@@ -37,6 +41,26 @@ def send_to_telegram(message: str):
             print("❌ Telegram 傳送失敗，HTTP:", res.status_code, res.text)
     except Exception as e:
         print("❌ Telegram 傳送失敗:", e)
+
+# ==========================
+# 語音通知傳送到本地端
+# ==========================
+def send_to_local_speaker(data: dict):
+    """呼叫本地語音端 API，讓電腦播報"""
+    if not LOCAL_SPEAKER_URL:
+        print("⚠️ 未設定 LOCAL_SPEAKER_URL，略過語音播報")
+        return
+    try:
+        res = requests.post(LOCAL_SPEAKER_URL, json=data, timeout=3)
+        if res.status_code == 200:
+            print("🔊 已發送至本地語音端")
+        else:
+            print("❌ 語音端回傳錯誤:", res.status_code, res.text)
+    except Exception as e:
+        print("❌ 無法連線到本地語音端:", e)
+
+
+
 
 # ==========================
 # 即時翻譯函式
@@ -84,7 +108,7 @@ def webhook():
         data = request.get_json(force=True)
         print("📩 收到 TradingView 資料:", data)
 
-        # 組成訊息文字
+        # 組成訊息文字# Telegram 訊息
         original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
 
         # ===== 即時翻譯訊息 =====
@@ -92,9 +116,14 @@ def webhook():
 
         # ===== 發送翻譯後訊息到 Telegram =====
         send_to_telegram(translated_msg)
-
+        
+        # ===== 傳送到本地語音端 =====
+        send_to_local_speaker(data)
+        
+        
         # 回傳成功訊息
-        return jsonify({"status": "success", "message": "Data received"}), 200
+        #return jsonify({"status": "success", "message": "Data received"}), 200
+        return jsonify({"status": "success", "message": "已發送到 Telegram + 語音端"}), 200
     except Exception as e:
         print("❌ Webhook 錯誤:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
@@ -104,5 +133,6 @@ def webhook():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
