@@ -85,7 +85,7 @@ def translate_text(text: str, source='zh-TW', target='en') -> str:
 # ==========================
 @app.route('/')
 def home():
-    return "✅ TradingView Webhook Server 運作中1！"
+    return "✅ TradingView Webhook Server 運作中111111！"
 
 # ==========================
 # 測試 Telegram 傳送訊息
@@ -188,6 +188,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
