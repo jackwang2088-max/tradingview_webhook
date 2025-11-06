@@ -5,6 +5,8 @@
 from flask import Flask, request, jsonify  # Flask 用於建立 Web 伺服器
 import requests, json, os                  # requests 用於 HTTP 請求，os 用於讀取環境變數
 from deep_translator import GoogleTranslator  # 用於即時翻譯文字
+
+import threading  # ✅ 新增：保護多線程存取 last_event
 # ==========================
 # 建立 Flask 應用
 # ==========================
@@ -174,6 +176,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
