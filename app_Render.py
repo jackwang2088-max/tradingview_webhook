@@ -1,10 +1,10 @@
 # ============================================================
-# app_Render.py - Render 部署版 TradingView Webhook
+# app_Render.py - Render 部署版 TradingView Webhook + 即時翻譯
 # ============================================================
 
-from flask import Flask, request, jsonify
-import requests, json, os
-
+from flask import Flask, request, jsonify  # Flask 用於建立 Web 伺服器
+import requests, json, os                  # requests 用於 HTTP 請求，os 用於讀取環境變數
+from deep_translator import GoogleTranslator  # 用於即時翻譯文字
 # ==========================
 # 建立 Flask 應用
 # ==========================
@@ -39,6 +39,22 @@ def send_to_telegram(message: str):
         print("❌ Telegram 傳送失敗:", e)
 
 # ==========================
+# 即時翻譯函式
+# ==========================
+def translate_text(text: str, source='zh-TW', target='en') -> str:
+    """
+    使用 GoogleTranslator 將文字即時翻譯
+    source：原文字語言
+    target：目標翻譯語言
+    """
+    try:
+        translated = GoogleTranslator(source=source, target=target).translate(text)
+        return translated
+    except Exception as e:
+        print("❌ 翻譯失敗:", e)
+        return text  # 若翻譯失敗，回傳原文
+        
+# ==========================
 # 測試首頁
 # ==========================
 @app.route('/')
@@ -54,31 +70,39 @@ def test_telegram():
     send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
     return "✅ 測試訊息已發送至 Telegram"
 
+
 # ==========================
 # Webhook 接收 TradingView 訊息
 # ==========================
 @app.route('/webhook', methods=['POST'])
 def webhook():
-    """接收 TradingView 的 Webhook JSON 並轉發到 Telegram"""
+    """
+    接收 TradingView 的 Webhook JSON 並翻譯後轉發到 Telegram
+    """
     try:
         # 強制解析 JSON
         data = request.get_json(force=True)
         print("📩 收到 TradingView 資料:", data)
 
-        # 組成訊息
-        msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
-        send_to_telegram(msg)
+        # 組成訊息文字
+        original_msg = f"📊 TradingView Webhook 收到資料：\n{json.dumps(data, indent=2, ensure_ascii=False)}"
+
+        # ===== 即時翻譯訊息 =====
+        translated_msg = translate_text(original_msg)
+
+        # ===== 發送翻譯後訊息到 Telegram =====
+        send_to_telegram(translated_msg)
 
         # 回傳成功訊息
         return jsonify({"status": "success", "message": "Data received"}), 200
     except Exception as e:
         print("❌ Webhook 錯誤:", e)
         return jsonify({"status": "error", "message": str(e)}), 500
-
 # ==========================
 # 程式入口
 # ==========================
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
