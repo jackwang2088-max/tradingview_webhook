@@ -94,15 +94,15 @@ event_id = 0             # 🔢 每筆事件的唯一編號
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """接收 TradingView JSON 並轉發至 Telegram + 本地語音端"""
-        """
+    """
     📩 接收 TradingView 傳來的 JSON 訊號。
     處理步驟：
-        1. 解析 JSON 資料
-        2. 翻譯（可選）
-        3. 建立唯一事件 ID
-        4. 推送到 Telegram
-        5. 推送到本地語音端
-        6. 儲存事件於 event_queue 供查詢
+    1. 解析 JSON 資料
+    2. 翻譯（可選）
+    3. 建立唯一事件 ID
+    4. 推送到 Telegram
+    5. 推送到本地語音端
+    6. 儲存事件於 event_queue 供查詢
     """
     global event_id
     try:
@@ -116,6 +116,11 @@ def webhook():
             event_id += 1
             eid = event_id
             event_queue.append({"id": eid, "data": data})
+            
+        # 提取關鍵欄位（signal / symbol / price）
+        signal_text = data.get("signal", "")
+        symbol = data.get("symbol", "")
+        price = data.get("price", "")
 
         # 建立 Telegram 訊息
         telegram_message = (
@@ -172,4 +177,3 @@ def get_latest_event():
 # ==========================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
-
