@@ -237,10 +237,11 @@ def webhook():
  
 @app.route('/events/latest', methods=['GET'])
 def get_latest_event():
-    """提供 local_poller.py 取得最新事件的 API"""
+    """提供 local_speaker.py 取得最近事件的 API"""
+    limit = int(request.args.get("limit", 10))  # 預設取最近10筆
     with lock:
-    limit = int(request.args.get("limit", 10))  # 預設抓最近10筆
-    return jsonify(events[-limit:])             # 回傳最近的事件
+        latest_events = list(event_queue)[-limit:]
+    return jsonify(latest_events)
 # ==========================
 # 本地端輪詢查詢最新事件
 # local_poller.py 將透過 /events/latest 拉取事件
@@ -258,6 +259,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
