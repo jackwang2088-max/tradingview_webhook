@@ -14,9 +14,9 @@ app = Flask(__name__)
 # ==========================
 # 讀取 Telegram 與本地語音設定
 # ==========================
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")
-CHAT_ID = os.environ.get("CHAT_ID")
-LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL")  # e.g. http://192.168.0.40:10000/speak
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # Telegram Bot API Token
+CHAT_ID = os.environ.get("CHAT_ID")                # 要發送的群組或個人 ID
+LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL")  # 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak
 
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
@@ -84,9 +84,9 @@ def test_telegram():
 # ==========================
 # 全域鎖與事件佇列
 # ==========================
-lock = threading.Lock()
-event_queue = []
-event_id = 0
+lock = threading.Lock()  # 🔒 用於確保多執行緒修改 event_queue 時不衝突
+event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
+event_id = 0             # 🔢 每筆事件的唯一編號
 
 # ==========================
 # TradingView Webhook 接收
@@ -94,11 +94,21 @@ event_id = 0
 @app.route('/webhook', methods=['POST'])
 def webhook():
     """接收 TradingView JSON 並轉發至 Telegram + 本地語音端"""
+        """
+    📩 接收 TradingView 傳來的 JSON 訊號。
+    處理步驟：
+        1. 解析 JSON 資料
+        2. 翻譯（可選）
+        3. 建立唯一事件 ID
+        4. 推送到 Telegram
+        5. 推送到本地語音端
+        6. 儲存事件於 event_queue 供查詢
+    """
     global event_id
     try:
         data = request.get_json(force=True)
         print(f"📩 收到 TradingView JSON: {data}")
-
+        # 翻譯內容
         translated_msg = translate_text(json.dumps(data, ensure_ascii=False))
 
         # 生成事件 ID 並記錄
@@ -116,7 +126,29 @@ def webhook():
         )
 
         send_to_telegram(telegram_message)
-        send_to_local_speaker({"id": eid, "data": data})
+        #send_to_local_speaker({"id": eid, "data": data})
+        #return jsonify({"status": "success", "id": eid}), 200
+
+        # === ✅ 新增: 轉送到本地 Speaker webhook ===
+        try:
+            requests.post("http://192.168.0.40:10000/webhook", json={
+                "id": eid,
+                "signal": signal_text,
+                "symbol": symbol,
+                "price": price
+            }, timeout=2)
+            print("🎯 已轉送到本地 Speaker")
+        except Exception as e:
+            print("⚠️ 本地 Speaker 未連線:", e)
+
+        # === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
+        if LOCAL_SPEAKER_URL:
+            try:
+                res = requests.post(LOCAL_SPEAKER_URL, json={"id": eid, "data": data}, timeout=2)
+                if res.status_code == 200:
+                    print("🔊 已發送至 LOCAL_SPEAKER_URL")
+            except Exception as e:
+                print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
 
         return jsonify({"status": "success", "id": eid}), 200
 
@@ -140,3 +172,4 @@ def get_latest_event():
 # ==========================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
