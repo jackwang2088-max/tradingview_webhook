@@ -147,7 +147,9 @@ def webhook():
         # 🔐 加鎖確保多線程安全
         with lock:
             event_id += 1
-            event_queue.append({"id": event_id, "data": data})
+            eid = event_id
+            event_queue.append({"id": eid, "data": data})
+            #event_queue.append({"id": event_id, "data": data})
              # 🔹 用法與功能：
                 # with lock: 表示進入一個鎖定區塊，確保這段程式碼同一時間只會被一個線程執行
                 # last_event["id"] += 1 : 每收到一個新的 webhook 事件就讓事件 ID +1
@@ -171,10 +173,13 @@ def webhook():
         send_to_telegram(telegram_message)
         
         # ======= 同步傳送至本地語音端  把接組成訊息文字透過translate_text即時翻譯訊息傳送到本地語音端 =======
-        local_data = data.copy()      # 加上事件編號供本地顯示
-        local_data["id"] = event_id  # 加上事件編號供本地顯示
-        send_to_local_speaker(data)
+        local_data = {"id": eid, "data": data}
+        send_to_local_speaker(local_data)
         return jsonify({"status": "success", "message": "已發送到 Telegram + 語音端"}), 200
+        #local_data = data.copy()      # 加上事件編號供本地顯示
+        #local_data["id"] = event_id  # 加上事件編號供本地顯示
+        #send_to_local_speaker(data)
+        r#eturn jsonify({"status": "success", "message": "已發送到 Telegram + 語音端"}), 200
 
     except Exception as e:
     print("❌ Webhook 錯誤:", e)
@@ -248,6 +253,7 @@ def get_latest_event():
 if __name__ == '__main__':
     # 本地測試用
     app.run(host='0.0.0.0', port=5000)
+
 
 
 
