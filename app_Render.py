@@ -109,7 +109,7 @@ def webhook():
         data = request.get_json(force=True)
         print(f"📩 收到 TradingView JSON: {data}")
         # 翻譯內容
-        translated_msg = translate_text(json.dumps(data, ensure_ascii=False))
+        #translated_msg = translate_text(json.dumps(data, ensure_ascii=False))
 
         # 生成事件 ID 並記錄
         with lock:
@@ -177,4 +177,5 @@ def get_latest_event():
 # ==========================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
