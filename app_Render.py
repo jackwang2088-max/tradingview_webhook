@@ -127,7 +127,7 @@ def webhook():
             f"台指通知機器人:\n"
             f"編號:{eid}\n"
             f"{json.dumps(data, ensure_ascii=False)}\n\n"
-            f"🈯翻譯內容:\n{translated_msg}"
+            #f"🈯翻譯內容:\n{translated_msg}"
         )
 
         send_to_telegram(telegram_message)
@@ -177,5 +177,6 @@ def get_latest_event():
 # ==========================
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000)
+
 
 
