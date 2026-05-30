@@ -14,6 +14,7 @@
 #3.Telegram Token 正常
 #4.CHAT_ID 正常
 #5.Telegram API 正常
+#6.Render 能連到 Telegram
 
 from flask import Flask, request, jsonify
 import requests, json, os, threading
@@ -148,27 +149,27 @@ def webhook():
         #return jsonify({"status": "success", "id": eid}), 200
 
         # === ✅ 新增: 轉送到本地 Speaker webhook ===
-        try:
-            requests.post("http://192.168.0.40:10000/webhook", json={
-                "id": eid,
-                "signal": signal_text,
-                "symbol": symbol,
-                "price": price
-            }, timeout=2)
-            print("🎯 已轉送到本地 Speaker")
-        except Exception as e:
-            print("⚠️ 本地 Speaker 未連線:", e)
+        #try:
+        #    requests.post("http://192.168.0.40:10000/webhook", json={
+        #        "id": eid,
+        #        "signal": signal_text,
+        #        "symbol": symbol,
+        #        "price": price
+        #    }, timeout=2)
+        #    print("🎯 已轉送到本地 Speaker")
+        #except Exception as e:
+        #    print("⚠️ 本地 Speaker 未連線:", e)
 
-        # === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
-        if LOCAL_SPEAKER_URL:
-            try:
-                res = requests.post(LOCAL_SPEAKER_URL, json={"id": eid, "data": data}, timeout=2)
-                if res.status_code == 200:
-                    print("🔊 已發送至 LOCAL_SPEAKER_URL")
-            except Exception as e:
-                print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
+        ## === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
+        #if LOCAL_SPEAKER_URL:
+        #    try:
+        #        res = requests.post(LOCAL_SPEAKER_URL, json={"id": eid, "data": data}, timeout=2)
+        #        if res.status_code == 200:
+        #            print("🔊 已發送至 LOCAL_SPEAKER_URL")
+        #    except Exception as e:
+        #        print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
 
-        return jsonify({"status": "success", "id": eid}), 200
+        #return jsonify({"status": "success", "id": eid}), 200
 
     except Exception as e:
         print("❌ Webhook 錯誤:", e)
