@@ -74,7 +74,7 @@ def home():
     return "✅ TradingView Webhook Server 運作中！"
 
 # ==========================
-# 測試 Telegram
+# 測試 Telegram==>請測https://tradingview-webhook-1-ogjq.onrender.com/test如果成功：Telegram 應收到：🚀 測試訊息：Telegram 發送功能正常！
 # ==========================
 @app.route('/test', methods=['GET'])
 def test_telegram():
