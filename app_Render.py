@@ -15,6 +15,12 @@
 #4.CHAT_ID 正常
 #5.Telegram API 正常
 #6.Render 能連到 Telegram
+# ============================================================
+#加一個時間測量在 webhook 開頭：
+import time
+start_time = time.time()
+# ============================================================
+
 
 from flask import Flask, request, jsonify
 import requests, json, os, threading
@@ -145,8 +151,10 @@ def webhook():
         )
 
         send_to_telegram(telegram_message)
+        print("Webhook耗時 =", time.time() - start_time)
         #send_to_local_speaker({"id": eid, "data": data})
-        #return jsonify({"status": "success", "id": eid}), 200
+        return jsonify({"status": "success", "id": eid}), 200
+
 
         # === ✅ 新增: 轉送到本地 Speaker webhook ===
         #try:
@@ -185,6 +193,8 @@ def get_latest_event():
     with lock:
         latest_events = list(event_queue)[-limit:]
     return jsonify(latest_events)
+    
+
 
 # ==========================
 # 主程式入口
