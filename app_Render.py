@@ -124,7 +124,7 @@ def webhook():
 
         # 建立 Telegram 訊息
         telegram_message = (
-            f"台指通知機器人:\n"
+            f"台指:\n"
             f"編號:{eid}\n"
             f"{json.dumps(data, ensure_ascii=False)}\n\n"
             #f"🈯翻譯內容:\n{translated_msg}"
