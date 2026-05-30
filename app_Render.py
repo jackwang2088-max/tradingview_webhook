@@ -8,6 +8,12 @@
 #4. requests.post(LOCAL_SPEAKER_URL)
 #5. return 200
 # ============================================================
+#檢查 
+#1.Render 網站正常
+#2.Flask 正常
+#3.Telegram Token 正常
+#4.CHAT_ID 正常
+#5.Telegram API 正常
 
 from flask import Flask, request, jsonify
 import requests, json, os, threading
