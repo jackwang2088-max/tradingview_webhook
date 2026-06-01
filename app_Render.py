@@ -1,26 +1,5 @@
-# ============================================================
-# app_Render.py - Render 部署版 TradingView Webhook + 即時翻譯
-# webhook 流程其實是：
-
-#1. 收到 TradingView
-#2. send_to_telegram()
-#3. requests.post("http://192.168.0.40:10000/webhook")
-#4. requests.post(LOCAL_SPEAKER_URL)
-#5. return 200
-# ============================================================
-#檢查 
-#1.Render 網站正常
-#2.Flask 正常
-#3.Telegram Token 正常
-#4.CHAT_ID 正常
-#5.Telegram API 正常
-#6.Render 能連到 Telegram
-
-
-
 from flask import Flask, request, jsonify
-import requests, json, os, threading
-from deep_translator import GoogleTranslator
+import requests, json, os
 
 # ==========================
 # 建立 Flask 應用
@@ -28,19 +7,36 @@ from deep_translator import GoogleTranslator
 app = Flask(__name__)
 
 # ==========================
-# 讀取 Telegram 與本地語音設定
+# 讀取 Telegram 設定（建議使用 Render 環境變數）
+# 在 Render → Dashboard → Environment → Environment Variables 設定
+# TELEGRAM_TOKEN：Telegram Bot Token
+# CHAT_ID：Telegram 收訊聊天 ID
 # ==========================
-TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # Telegram Bot API Token
-CHAT_ID = os.environ.get("CHAT_ID")                # 要發送的群組或個人 ID
-LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL")  # 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak
 
+
+from dotenv import load_dotenv
+load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
+import os
+TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN")
+CHAT_ID = os.getenv("TG_CHAT_ID")
+
+# =============================================================================
+# if not TELEGRAM_TOKEN or not CHAT_ID:
+#     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
+# =============================================================================
 if not TELEGRAM_TOKEN or not CHAT_ID:
-    print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
-if not LOCAL_SPEAKER_URL:
-    print("⚠️ 尚未設定 LOCAL_SPEAKER_URL（本地語音推播端 URL）")
-
+    config_path = os.path.join(os.path.dirname(__file__), "config.json")
+    if os.path.exists(config_path):
+        with open(config_path, "r", encoding="utf-8") as f:
+            config = json.load(f)
+        TELEGRAM_TOKEN = config.get("TELEGRAM_TOKEN")
+        CHAT_ID = config.get("CHAT_ID")
+        print("✅ 從本地 config.json 載入設定成功")
+    else:
+        print("❌ 找不到環境變數或 config.json，請確認設定")
+        exit(1)
 # ==========================
-# Telegram 傳送函式
+# 定義 Telegram 傳訊函式
 # ==========================
 def send_to_telegram(message: str):
     """將訊息發送到 Telegram"""
@@ -54,33 +50,6 @@ def send_to_telegram(message: str):
             print("❌ Telegram 傳送失敗，HTTP:", res.status_code, res.text)
     except Exception as e:
         print("❌ Telegram 傳送失敗:", e)
-
-# ==========================
-# 傳送到本地語音端
-# ==========================
-def send_to_local_speaker(data: dict):
-    """呼叫本地語音端 API 播報訊息"""
-    if not LOCAL_SPEAKER_URL:
-        print("⚠️ 未設定 LOCAL_SPEAKER_URL，略過語音播報")
-        return
-    try:
-        res = requests.post(LOCAL_SPEAKER_URL, json=data, timeout=3)
-        if res.status_code == 200:
-            print("🔊 已發送至本地語音端")
-        else:
-            print("❌ 語音端回傳錯誤:", res.status_code, res.text)
-    except Exception as e:
-        print("❌ 無法連線到本地語音端:", e)
-
-# ==========================
-# 翻譯函式
-# ==========================
-def translate_text(text: str, source='zh-TW', target='en') -> str:
-    try:
-        return GoogleTranslator(source=source, target=target).translate(text)
-    except Exception as e:
-        print("❌ 翻譯失敗:", e)
-        return text
 
 # ==========================
 # 測試首頁
@@ -97,19 +66,21 @@ def test_telegram():
     send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
     return "✅ 測試訊息已發送至 Telegram"
 
+
 # ==========================
 # 全域鎖與事件佇列
 # ==========================
 lock = threading.Lock()  # 🔒 用於確保多執行緒修改 event_queue 時不衝突
 event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
-event_id = 0             # 🔢 每筆事件的唯一編號
+# =============================================================================
+# event_id = 0             # 🔢 每筆事件的唯一編號
+# =============================================================================
 
-# ==========================
-# TradingView Webhook 接收
-# ==========================
+# 建立 Flask 路由，當收到 POST 請求到 /webhook 時執行 webhook() 函式
 @app.route('/webhook', methods=['POST'])
-def webhook():
-    """接收 TradingView JSON 並轉發至 Telegram + 本地語音端"""
+def webhook():# 定義 webhook 處理函式
+ # 函式說明：接收 TradingView 傳來的 Webhook JSON 資料並轉發到 Telegram
+    """接收 TradingView 的 Webhook JSON 並轉發到 Telegram + 本地語音端"""
     """
     📩 接收 TradingView 傳來的 JSON 訊號。
     處理步驟：
@@ -125,138 +96,70 @@ def webhook():
     import time
     start_time = time.time()
     # ============================================================
-    global event_id
-    try:       
-        print("========== RAW ==========")
-        print(request.data)
+# =============================================================================
+#     global event_id
+# =============================================================================
 
+
+    try:
+        # 顯示原始收到的資料區塊標題
+        print("========== 印出原始 Request BodRAW DATA 未解析前的位元組資料）==========")
+        print(request.data)# 印出原始 Request Body（未解析前的位元組資料）
+        # 顯示 HTTP Header 區塊標題
+        print("========== 印出所有 HTTP Header 資訊 ==========")
+        print(request.headers)# 印出所有 HTTP Header 資訊
+
+        # 強制將收到的內容解析成 JSON# 即使 Content-Type 不是 application/json 也會嘗試解析
         data = request.get_json(force=True)
-
-        print("========== JSON ==========")
-        print(data)
-        # =====================
-        # Telegram
-        # =====================
-        t1 = time.time()
-        send_to_telegram(telegram_message)
-
-        print(
-            "Webhook耗時 =",
-            round(time.time() - t1, 3),
-            #round(time.time() - start_time, 3),
-            "秒"
+        # 顯示解析後 JSON 區塊標題
+        print("========== 顯示解析後JSON DATA區塊標題 ==========")
+        print(data)  # 印出解析完成的 Python Dictionary
+        # 組合要傳送到 Telegram 的訊息內容
+        msg = (
+            # 第一行標題
+            f"📊 TradingView Webhook 收到資料：\n"
+            # 將 JSON 格式化輸出
+            # indent=2 代表縮排 2 格
+            # ensure_ascii=False 代表保留中文不要轉 Unicode
+            f"{json.dumps(data, indent=2, ensure_ascii=False)}"
         )
 
-        return jsonify({"status":"success"}),200
+        send_to_telegram(msg)# 呼叫 Telegram 發送函式
+
+        return jsonify({
+            "status": "success",
+            "message": "Data received"
+        }), 200
 
     except Exception as e:
+
+        import traceback
 
         print("========== ERROR ==========")
-        print(request.data)
-        print(e)
+        print(str(e))
 
-        return jsonify({"status":"error"}),500
-        
-        data = request.get_json(force=True)
-        print(f"📩 收到 TradingView JSON: {data}")
-        # 翻譯內容
-        #translated_msg = translate_text(json.dumps(data, ensure_ascii=False))
+        traceback.print_exc()
 
-        # 生成事件 ID 並記錄
-        with lock:
-            event_id += 1
-            eid = event_id
-            event_queue.append({"id": eid, "data": data})
-            
-        # 提取關鍵欄位（signal / symbol / price）
-        signal_text = data.get("signal", "")
-        symbol = data.get("symbol", "")
-        price = data.get("price", "")
-
-        # 建立 Telegram 訊息
-        telegram_message = (
-            f"台指:\n"
-            f"編號:{eid}\n"
-            f"{json.dumps(data, ensure_ascii=False)}\n\n"
-            #f"🈯翻譯內容:\n{translated_msg}"
-        )
-
-        send_to_telegram(telegram_message)
-        print("Webhook耗時 =", time.time() - start_time)
-        #send_to_local_speaker({"id": eid, "data": data})
-        return jsonify({"status": "success", "id": eid}), 200
-
-        # =====================
-        # 本地 Speaker
-        # =====================
-        #t2 = time.time()
-
-        # === ✅ 新增: 轉送到本地 Speaker webhook ===
-        #try:
-        #    requests.post("http://192.168.0.40:10000/webhook", json={
-        #        "id": eid,
-        #        "signal": signal_text,
-        #        "symbol": symbol,
-        #        "price": price
-        #    }, timeout=2)
-        #    print("🎯 已轉送到本地 Speaker")
-        #    print(
-        #        "Speaker耗時 =",
-        #        round(time.time() - t2, 3),
-        #        "秒"
-        #    )
-        #except Exception as e:
-        #    print("⚠️ 本地 Speaker 未連線:", e)
-        #    print(
-        #        "Speaker失敗耗時 =",
-        #        round(time.time() - t2, 3),
-        #        "秒"
-        #    )
-
-        #    print("⚠️ Speaker錯誤:", e)
-
-        #print(
-        #    "Webhook總耗時 =",
-        #    round(time.time() - start_time, 3),
-        #    "秒"
-        #)
-       
-
-        ## === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
-        #if LOCAL_SPEAKER_URL:
-        #    try:
-        #        res = requests.post(LOCAL_SPEAKER_URL, json={"id": eid, "data": data}, timeout=2)
-        #        if res.status_code == 200:
-        #            print("🔊 已發送至 LOCAL_SPEAKER_URL")
-        #    except Exception as e:
-        #        print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
-        #    print("Webhook耗時 =",
-        #    round(time.time() - start_time, 3),"秒")
-
-        #return jsonify({"status": "success", "id": eid}), 200
-
-    except Exception as e:
-        print("❌ Webhook 錯誤:", e)
-        return jsonify({"status": "error", "message": str(e)}), 500
-
-# ==========================
-# 提供 local_speaker 取得最新事件
-# ==========================
-@app.route('/events/latest', methods=['GET'])
-def get_latest_event():
-    """提供 local_speaker.py 取得最近事件的 API"""
-    limit = int(request.args.get("limit", 10))  # 預設取最近10筆
-    with lock:
-        latest_events = list(event_queue)[-limit:]
-    return jsonify(latest_events)
+        return jsonify({
+            "status": "error",
+            "message": str(e)
+        }), 500
     
-
-
+    
 # ==========================
-# 主程式入口
+# 測試 Telegram 傳送訊息
+# ==========================
+# =============================================================================
+# @app.route('/test', methods=['GET'])
+# =============================================================================
+def test_telegram():
+    """手動測試 Telegram 是否能收到訊息"""
+    send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
+    return "✅ 測試訊息已發送至 Telegram"
+# ==========================
+# 程式入口
 # ==========================
 if __name__ == '__main__':
+    # 本地測試用
     app.run(host='0.0.0.0', port=5000)
-
-
-
+ 
