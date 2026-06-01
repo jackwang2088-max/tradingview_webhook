@@ -188,51 +188,51 @@ def webhook():
         # =====================
         # 本地 Speaker
         # =====================
-        t2 = time.time()
+        #t2 = time.time()
 
         # === ✅ 新增: 轉送到本地 Speaker webhook ===
-        try:
-            requests.post("http://192.168.0.40:10000/webhook", json={
-                "id": eid,
-                "signal": signal_text,
-                "symbol": symbol,
-                "price": price
-            }, timeout=2)
-            print("🎯 已轉送到本地 Speaker")
-            print(
-                "Speaker耗時 =",
-                round(time.time() - t2, 3),
-                "秒"
-            )
-        except Exception as e:
-            print("⚠️ 本地 Speaker 未連線:", e)
-            print(
-                "Speaker失敗耗時 =",
-                round(time.time() - t2, 3),
-                "秒"
-            )
+        #try:
+        #    requests.post("http://192.168.0.40:10000/webhook", json={
+        #        "id": eid,
+        #        "signal": signal_text,
+        #        "symbol": symbol,
+        #        "price": price
+        #    }, timeout=2)
+        #    print("🎯 已轉送到本地 Speaker")
+        #    print(
+        #        "Speaker耗時 =",
+        #        round(time.time() - t2, 3),
+        #        "秒"
+        #    )
+        #except Exception as e:
+        #    print("⚠️ 本地 Speaker 未連線:", e)
+        #    print(
+        #        "Speaker失敗耗時 =",
+        #        round(time.time() - t2, 3),
+        #        "秒"
+        #    )
 
-            print("⚠️ Speaker錯誤:", e)
+        #    print("⚠️ Speaker錯誤:", e)
 
-        print(
-            "Webhook總耗時 =",
-            round(time.time() - start_time, 3),
-            "秒"
-        )
+        #print(
+        #    "Webhook總耗時 =",
+        #    round(time.time() - start_time, 3),
+        #    "秒"
+        #)
        
 
-        # === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
-        if LOCAL_SPEAKER_URL:
-            try:
-                res = requests.post(LOCAL_SPEAKER_URL, json={"id": eid, "data": data}, timeout=2)
-                if res.status_code == 200:
-                    print("🔊 已發送至 LOCAL_SPEAKER_URL")
-            except Exception as e:
-                print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
-            print("Webhook耗時 =",
-            round(time.time() - start_time, 3),"秒")
+        ## === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
+        #if LOCAL_SPEAKER_URL:
+        #    try:
+        #        res = requests.post(LOCAL_SPEAKER_URL, json={"id": eid, "data": data}, timeout=2)
+        #        if res.status_code == 200:
+        #            print("🔊 已發送至 LOCAL_SPEAKER_URL")
+        #    except Exception as e:
+        #        print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
+        #    print("Webhook耗時 =",
+        #    round(time.time() - start_time, 3),"秒")
 
-        return jsonify({"status": "success", "id": eid}), 200
+        #return jsonify({"status": "success", "id": eid}), 200
 
     except Exception as e:
         print("❌ Webhook 錯誤:", e)
