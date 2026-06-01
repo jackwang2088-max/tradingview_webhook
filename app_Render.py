@@ -183,7 +183,7 @@ def webhook():
         send_to_telegram(telegram_message)
         print("Webhook耗時 =", time.time() - start_time)
         #send_to_local_speaker({"id": eid, "data": data})
-        #return jsonify({"status": "success", "id": eid}), 200
+        eturn jsonify({"status": "success", "id": eid}), 200
 
         # =====================
         # 本地 Speaker
@@ -219,6 +219,7 @@ def webhook():
             round(time.time() - start_time, 3),
             "秒"
         )
+        return jsonify({"status":"success"}),200
 
         # === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
         if LOCAL_SPEAKER_URL:
