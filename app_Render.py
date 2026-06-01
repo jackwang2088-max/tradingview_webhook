@@ -15,11 +15,7 @@
 #4.CHAT_ID 正常
 #5.Telegram API 正常
 #6.Render 能連到 Telegram
-# ============================================================
-#加一個時間測量在 webhook 開頭：
-import time
-start_time = time.time()
-# ============================================================
+
 
 
 from flask import Flask, request, jsonify
@@ -124,8 +120,46 @@ def webhook():
     5. 推送到本地語音端
     6. 儲存事件於 event_queue 供查詢
     """
+    # ============================================================
+    #加一個時間測量在 webhook 開頭：
+    import time
+    start_time = time.time()
+    # ============================================================
     global event_id
     try:
+        @app.route('/webhook', methods=['POST'])
+def webhook():
+
+    start_time = time.time()
+
+    try:
+
+        print("========== RAW ==========")
+        print(request.data)
+
+        data = request.get_json(force=True)
+
+        print("========== JSON ==========")
+        print(data)
+
+        send_to_telegram("測試")
+
+        print(
+            "Webhook耗時 =",
+            round(time.time() - start_time, 3),
+            "秒"
+        )
+
+        return jsonify({"status":"success"}),200
+
+    except Exception as e:
+
+        print("========== ERROR ==========")
+        print(request.data)
+        print(e)
+
+        return jsonify({"status":"error"}),500
+        
         data = request.get_json(force=True)
         print(f"📩 收到 TradingView JSON: {data}")
         # 翻譯內容
