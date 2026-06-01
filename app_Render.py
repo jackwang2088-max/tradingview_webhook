@@ -12,7 +12,17 @@ app = Flask(__name__)
 # TELEGRAM_TOKEN：Telegram Bot Token
 # CHAT_ID：Telegram 收訊聊天 ID
 # ==========================
+# ==========================
+# 讀取 Telegram 與本地語音設定
+# ==========================
+TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN")  # Telegram Bot API Token
+CHAT_ID = os.environ.get("CHAT_ID")                # 要發送的群組或個人 ID
+LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL")  # 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak
 
+if not TELEGRAM_TOKEN or not CHAT_ID:
+    print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
+if not LOCAL_SPEAKER_URL:
+    print("⚠️ 尚未設定 LOCAL_SPEAKER_URL（本地語音推播端 URL）")
 
 # =============================================================================
 # from dotenv import load_dotenv
@@ -22,21 +32,7 @@ import os
 TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN")
 CHAT_ID = os.getenv("TG_CHAT_ID")
 
-# =============================================================================
-# if not TELEGRAM_TOKEN or not CHAT_ID:
-#     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID")
-# =============================================================================
-if not TELEGRAM_TOKEN or not CHAT_ID:
-    config_path = os.path.join(os.path.dirname(__file__), "config.json")
-    if os.path.exists(config_path):
-        with open(config_path, "r", encoding="utf-8") as f:
-            config = json.load(f)
-        TELEGRAM_TOKEN = config.get("TELEGRAM_TOKEN")
-        CHAT_ID = config.get("CHAT_ID")
-        print("✅ 從本地 config.json 載入設定成功")
-    else:
-        print("❌ 找不到環境變數或 config.json，請確認設定")
-        exit(1)
+
 # ==========================
 # 定義 Telegram 傳訊函式
 # ==========================
