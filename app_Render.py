@@ -14,8 +14,10 @@ app = Flask(__name__)
 # ==========================
 
 
-from dotenv import load_dotenv
-load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
+# =============================================================================
+# from dotenv import load_dotenv
+# load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
+# =============================================================================
 import os
 TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN")
 CHAT_ID = os.getenv("TG_CHAT_ID")
@@ -70,6 +72,7 @@ def test_telegram():
 # ==========================
 # 全域鎖與事件佇列
 # ==========================
+import threading
 lock = threading.Lock()  # 🔒 用於確保多執行緒修改 event_queue 時不衝突
 event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
 # =============================================================================
