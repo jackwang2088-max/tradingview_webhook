@@ -137,12 +137,13 @@ def webhook():
         # =====================
         # Telegram
         # =====================
-        t1 = time.time()
-        send_to_telegram("測試")
+        #t1 = time.time()
+        #send_to_telegram("測試")
 
         print(
             "Webhook耗時 =",
             round(time.time() - t1, 3),
+            round(time.time() - start_time, 3),
             "秒"
         )
 
