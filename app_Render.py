@@ -134,16 +134,19 @@ def webhook():
 
         print("========== JSON ==========")
         print(data)
-
+        # =====================
+        # Telegram
+        # =====================
+        t1 = time.time()
         send_to_telegram("測試")
 
         print(
             "Webhook耗時 =",
-            round(time.time() - start_time, 3),
+            round(time.time() - t1, 3),
             "秒"
         )
 
-        return jsonify({"status":"success"}),200
+        #return jsonify({"status":"success"}),200
 
     except Exception as e:
 
@@ -151,7 +154,7 @@ def webhook():
         print(request.data)
         print(e)
 
-        return jsonify({"status":"error"}),500
+        #return jsonify({"status":"error"}),500
         
         data = request.get_json(force=True)
         print(f"📩 收到 TradingView JSON: {data}")
@@ -182,6 +185,10 @@ def webhook():
         #send_to_local_speaker({"id": eid, "data": data})
         #return jsonify({"status": "success", "id": eid}), 200
 
+        # =====================
+        # 本地 Speaker
+        # =====================
+        t2 = time.time()
 
         # === ✅ 新增: 轉送到本地 Speaker webhook ===
         try:
@@ -192,8 +199,26 @@ def webhook():
                 "price": price
             }, timeout=2)
             print("🎯 已轉送到本地 Speaker")
+            print(
+                "Speaker耗時 =",
+                round(time.time() - t2, 3),
+                "秒"
+            )
         except Exception as e:
             print("⚠️ 本地 Speaker 未連線:", e)
+            print(
+                "Speaker失敗耗時 =",
+                round(time.time() - t2, 3),
+                "秒"
+            )
+
+            print("⚠️ Speaker錯誤:", e)
+
+        print(
+            "Webhook總耗時 =",
+            round(time.time() - start_time, 3),
+            "秒"
+        )
 
         # === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
         if LOCAL_SPEAKER_URL:
@@ -203,6 +228,8 @@ def webhook():
                     print("🔊 已發送至 LOCAL_SPEAKER_URL")
             except Exception as e:
                 print("⚠️ LOCAL_SPEAKER_URL 推送失敗:", e)
+            print("Webhook耗時 =",
+            round(time.time() - start_time, 3),"秒")
 
         return jsonify({"status": "success", "id": eid}), 200
 
