@@ -146,7 +146,7 @@ def webhook():
             "秒"
         )
 
-        #return jsonify({"status":"success"}),200
+        return jsonify({"status":"success"}),200
 
     except Exception as e:
 
@@ -154,7 +154,7 @@ def webhook():
         print(request.data)
         print(e)
 
-        #return jsonify({"status":"error"}),500
+        return jsonify({"status":"error"}),500
         
         data = request.get_json(force=True)
         print(f"📩 收到 TradingView JSON: {data}")
@@ -219,7 +219,7 @@ def webhook():
             round(time.time() - start_time, 3),
             "秒"
         )
-        return jsonify({"status":"success"}),200
+       
 
         # === 備用方案: 若有設定 LOCAL_SPEAKER_URL 也同步推送 ===
         if LOCAL_SPEAKER_URL:
