@@ -126,14 +126,7 @@ def webhook():
     start_time = time.time()
     # ============================================================
     global event_id
-    try:
-        @app.route('/webhook', methods=['POST'])
-def webhook():
-
-    start_time = time.time()
-
-    try:
-
+    try:       
         print("========== RAW ==========")
         print(request.data)
 
