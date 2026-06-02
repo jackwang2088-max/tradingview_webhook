@@ -52,7 +52,7 @@ TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN", "").strip()
 CHAT_ID = os.getenv("TG_CHAT_ID", "").strip()
 LOCAL_SPEAKER_URL = os.getenv("LOCAL_SPEAKER_URL", "").strip()
 
-print("TOKEN EXISTS =", bool(TELEGRAM_TOKEN))
+print("TELEGRAM_TOKEN =", TELEGRAM_TOKEN)
 print("CHAT_ID =", CHAT_ID)
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID") 
