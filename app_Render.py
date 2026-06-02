@@ -24,7 +24,8 @@ app = Flask(__name__)
 import os
 TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN")
 CHAT_ID = os.getenv("TG_CHAT_ID")
-
+print("TOKEN =", TELEGRAM_TOKEN)
+print("CHAT_ID =", CHAT_ID)
 
 # ==========================
 # 定義 Telegram 傳訊函式
