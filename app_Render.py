@@ -40,17 +40,11 @@ app = Flask(__name__)
 # print("ENV CHAT_ID =", os.getenv("TG_CHAT_ID"))
 # =============================================================================
 
-# ========================== # 讀取 Telegram 與本地語音設定 # ========================== 
-#TELEGRAM_TOKEN = os.environ.get("ENV TOKEN") # Telegram Bot API Token 
-#CHAT_ID = os.environ.get("ENV CHAT_ID") # 要發送的群組或個人 ID 
-#LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL") # 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak 
-# =============================================================================
-#print("TELEGRAM_TOKEN =", TELEGRAM_TOKEN)
-#print("CHAT_ID =", CHAT_ID)
-# =============================================================================
-TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN", "").strip()
-CHAT_ID = os.getenv("TG_CHAT_ID", "").strip()
-LOCAL_SPEAKER_URL = os.getenv("LOCAL_SPEAKER_URL", "").strip()
+# ========================== # 讀取 Telegram 與本地語音設定 # ==========================
+#我的 Render 裡到底有什麼變數CHAT_ID和 LOCAL_SPEAKER_URL 和TELEGRAM_TOKEN
+TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()#Render中的環境中的設定變數# Telegram Bot API Token 
+CHAT_ID = os.getenv("CHAT_ID", "").strip()#Render中的環境中的設定變數# 要發送的群組或個人 ID 
+LOCAL_SPEAKER_URL = os.getenv("LOCAL_SPEAKER_URL", "").strip()#Render中的環境中的設定變數# 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak 
 
 print("TELEGRAM_TOKEN =", TELEGRAM_TOKEN)
 print("CHAT_ID =", CHAT_ID)
