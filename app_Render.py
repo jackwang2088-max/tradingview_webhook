@@ -24,8 +24,8 @@ TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()#Render中的環境中�
 CHAT_ID = os.getenv("CHAT_ID", "").strip()#Render中的環境中的設定變數# 要發送的群組或個人 ID 
 LOCAL_SPEAKER_URL = os.getenv("LOCAL_SPEAKER_URL", "").strip()#Render中的環境中的設定變數# 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak 
 
-print("TELEGRAM_TOKEN =", TELEGRAM_TOKEN)
-print("CHAT_ID =", CHAT_ID)
+#print("TELEGRAM_TOKEN =", TELEGRAM_TOKEN)
+#print("CHAT_ID =", CHAT_ID)
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID") 
 if not LOCAL_SPEAKER_URL:
