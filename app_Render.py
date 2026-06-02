@@ -39,7 +39,7 @@ load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
 # =============================================================================
 
 # ========================== # 讀取 Telegram 與本地語音設定 # ========================== 
-TELEGRAM_TOKEN = os.environ.get(""ENV TOKEN") # Telegram Bot API Token 
+TELEGRAM_TOKEN = os.environ.get("ENV TOKEN") # Telegram Bot API Token 
 CHAT_ID = os.environ.get("ENV CHAT_ID") # 要發送的群組或個人 ID 
 LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL") # 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak 
 # =============================================================================
