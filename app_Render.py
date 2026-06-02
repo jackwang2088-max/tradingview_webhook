@@ -18,28 +18,6 @@ app = Flask(__name__)
 # ==========================
 # 讀取 Telegram 與本地語音設定
 # ==========================
-# =============================================================================
-# # =============================================================================
-# from dotenv import load_dotenv
-# load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
-# # =============================================================================
-# # =============================================================================
-# import os
-# TELEGRAM_TOKEN = os.getenv("TG_BOT_TOKEN")
-# CHAT_ID = os.getenv("TG_CHAT_ID")
-# # =============================================================================
-# =============================================================================
-
-# =============================================================================
-# import os
-# from dotenv import load_dotenv
-# load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
-# =============================================================================
-# =============================================================================
-# print("ENV TOKEN =", os.getenv("TG_BOT_TOKEN"))
-# print("ENV CHAT_ID =", os.getenv("TG_CHAT_ID"))
-# =============================================================================
-
 # ========================== # 讀取 Telegram 與本地語音設定 # ==========================
 #我的 Render 裡到底有什麼變數CHAT_ID和 LOCAL_SPEAKER_URL 和TELEGRAM_TOKEN
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()#Render中的環境中的設定變數# Telegram Bot API Token 
@@ -52,10 +30,6 @@ if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID") 
 if not LOCAL_SPEAKER_URL:
     print("⚠️ 尚未設定 LOCAL_SPEAKER_URL（本地語音推播端 URL）")
-
-
-
-
 
 # ==========================
 # 定義 Telegram 傳訊函式
