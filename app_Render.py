@@ -34,6 +34,9 @@ app = Flask(__name__)
 TELEGRAM_TOKEN = os.environ.get("TELEGRAM_TOKEN") # Telegram Bot API Token 
 CHAT_ID = os.environ.get("CHAT_ID") # 要發送的群組或個人 ID 
 LOCAL_SPEAKER_URL = os.environ.get("LOCAL_SPEAKER_URL") # 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak 
+print("TOKEN =", TELEGRAM_TOKEN)
+print("CHAT_ID =", CHAT_ID)
+
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID") 
 if not LOCAL_SPEAKER_URL:
@@ -41,8 +44,7 @@ if not LOCAL_SPEAKER_URL:
 
 
 
-print("TOKEN =", TELEGRAM_TOKEN)
-print("CHAT_ID =", CHAT_ID)
+
 
 # ==========================
 # 定義 Telegram 傳訊函式
