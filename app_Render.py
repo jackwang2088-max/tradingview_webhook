@@ -1,7 +1,7 @@
 from flask import Flask, request, jsonify
 print("🔥 VERSION 2026-06-02 05:35")
-import requests, json, os, threading from deep_translator 
-import GoogleTranslator
+import requests, json, os, threading 
+from deep_translator import GoogleTranslator
 
 # ==========================
 # 建立 Flask 應用
