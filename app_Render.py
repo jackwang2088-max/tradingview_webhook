@@ -32,7 +32,6 @@ app = Flask(__name__)
 
 import os
 from dotenv import load_dotenv
-
 load_dotenv(dotenv_path=r"E:\python\tradingview_webhook\.env")
 # =============================================================================
 # print("ENV TOKEN =", os.getenv("TG_BOT_TOKEN"))
