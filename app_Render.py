@@ -14,6 +14,7 @@ app = Flask(__name__)
 # TELEGRAM_TOKEN：Telegram Bot Token
 # CHAT_ID：Telegram 收訊聊天 ID
 # ==========================
+
 # ==========================
 # 讀取 Telegram 與本地語音設定
 # ==========================
