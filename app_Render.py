@@ -33,19 +33,82 @@ if not LOCAL_SPEAKER_URL:
 
 # ==========================
 # 定義 Telegram 傳訊函式
+# 為什麼有時成功有時 timeout
+# 因為 TradingView 只看：我送出去後3秒內有沒有收到 HTTP 200
 # ==========================
+# =============================================================================
+# def send_to_telegram(message: str):
+#     """將訊息發送到 Telegram"""
+#     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
+#     payload = {"chat_id": CHAT_ID, "text": message}
+#     try:
+#         res = requests.post(url, json=payload, timeout=2)
+#         if res.status_code == 200:
+#             print("✅ Telegram 傳送成功")
+#         else:
+#             print("❌ Telegram 傳送失敗，HTTP:", res.status_code, res.text)
+#     except Exception as e:
+#         print("❌ Telegram 傳送失敗:", e)
+# =============================================================================
 def send_to_telegram(message: str):
-    """將訊息發送到 Telegram"""
+    import time
+    t1 = time.time()# 記錄開始時間
+    """
+    傳送訊息到 Telegram Bot
+    參數:
+        message (str)
+        要發送到 Telegram 的文字內容
+
+    範例:
+        send_to_telegram("Hello")
+        send_to_telegram("台指突破高點")
+    """
+    # 建立 Telegram Bot API 網址
+    # TELEGRAM_TOKEN 來自 Render 環境變數
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {"chat_id": CHAT_ID, "text": message}
+
+    # 建立要送給 Telegram API 的 JSON 資料
+    payload = {
+        # Telegram 群組或個人聊天室 ID
+        "chat_id": CHAT_ID,
+        # 要傳送的訊息內容
+        "text": message
+    }
+
     try:
-        res = requests.post(url, json=payload)
-        if res.status_code == 200:
-            print("✅ Telegram 傳送成功")
-        else:
-            print("❌ Telegram 傳送失敗，HTTP:", res.status_code, res.text)
+
+        # 發送 HTTP POST 請求給 Telegram
+        # json=payload 代表以 JSON 格式送出
+        # timeout=2 代表最多等待 2 秒
+        # 超過 2 秒沒回應就直接丟出例外錯誤
+        res = requests.post(
+            url,
+            json=payload,
+            timeout=2
+        )
+
+        # 印出 HTTP 狀態碼
+        # 200 = 成功
+        # 400 = 參數錯誤
+        # 401 = Token 錯誤
+        # 403 = 權限不足
+        print("TG Status =", res.status_code)
+        print("Telegram耗時 =",round(time.time() - t1, 3),"秒")
+
     except Exception as e:
-        print("❌ Telegram 傳送失敗:", e)
+        #Telegram timeout，目前你看不到「失敗花了多久」
+        # 如果連線失敗、網路中斷、
+        # Telegram 太慢、超過 timeout
+        # 就會進入這裡
+        
+        print(#Telegram timeout，目前你看不到「失敗花了多久」
+            "Telegram失敗耗時 =",
+            round(time.time() - t1, 3),
+            "秒"
+        )
+
+        print("Telegram timeout:", e)
+
 
 # ==========================
 # 測試首頁
@@ -121,9 +184,33 @@ def webhook():# 定義 webhook 處理函式
             f"{json.dumps(data, indent=2, ensure_ascii=False)}"
         )
 
+        # ==========================
+        # Telegram開始計時
+        # ==========================
+        tg_start = time.time()
+        # 發送 Telegram
         send_to_telegram(msg)# 呼叫 Telegram 發送函式
+        # ==========================
+        # Telegram耗時
+        # ==========================
+        print(
+            "Telegram區段耗時 =",
+            round(time.time() - tg_start, 3),
+            "秒"
+        )
 
-        return jsonify({
+        # ==========================
+        # Webhook總耗時
+        # ==========================
+        print(
+            "Webhook總耗時 =",
+            round(time.time() - start_time, 3),
+            "秒"
+        )
+        # ==========================
+        # 回傳成功給 TradingView
+        # ==========================
+        return jsonify({# 回傳成功
             "status": "success",
             "message": "Data received"
         }), 200
@@ -133,9 +220,19 @@ def webhook():# 定義 webhook 處理函式
         import traceback
 
         print("========== ERROR ==========")
+
         print(str(e))
 
         traceback.print_exc()
+
+        # ==========================
+        # 發生錯誤時也計算耗時
+        # ==========================
+        print(
+            "Webhook失敗耗時 =",
+            round(time.time() - start_time, 3),
+            "秒"
+        )
 
         return jsonify({
             "status": "error",
