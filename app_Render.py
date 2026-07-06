@@ -177,7 +177,7 @@ def webhook():# 定義 webhook 處理函式
         # 組合要傳送到 Telegram 的訊息內容
         msg = (
             # 第一行標題
-            f"📊 TG收到由TradingView Webhook所傳送資料：\n"
+            f"📊 TG收到由Tv Webhook資料：\n"
             # 將 JSON 格式化輸出
             # indent=2 代表縮排 2 格
             # ensure_ascii=False 代表保留中文不要轉 Unicode
