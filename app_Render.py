@@ -136,6 +136,23 @@ event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
 # event_id = 0             # 🔢 每筆事件的唯一編號
 # =============================================================================
 
+# ==========================
+# 提供 local_speaker 讀取事件
+# ==========================
+@app.route('/events/latest', methods=['GET'])
+def latest_events():
+
+    limit = int(request.args.get("limit", 5))
+
+    with lock:
+        events = event_queue[-limit:]
+
+    return jsonify(events)
+
+
+
+
+
 # 建立 Flask 路由，當收到 POST 請求到 /webhook 時執行 webhook() 函式
 @app.route('/webhook', methods=['POST'])
 def webhook():# 定義 webhook 處理函式
@@ -207,18 +224,7 @@ def webhook():# 定義 webhook 處理函式
         
         print("目前 event_queue =", event_queue)
 
-        # ==========================
-        # 提供 local_speaker 讀取事件
-        # ==========================
-        @app.route('/events/latest', methods=['GET'])
-        def latest_events():
-        
-            limit = int(request.args.get("limit", 5))
-        
-            with lock:
-                events = event_queue[-limit:]
-        
-            return jsonify(events)
+       
 
 
         
