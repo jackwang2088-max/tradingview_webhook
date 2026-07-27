@@ -191,6 +191,38 @@ def webhook():# 定義 webhook 處理函式
         # 發送 Telegram
         send_to_telegram(msg)# 呼叫 Telegram 發送函式
         # ==========================
+        # 儲存事件供 local_speaker 讀取
+        # ==========================
+        global event_queue
+        
+        with lock:
+            event_queue.append({
+                "id": int(time.time()),
+                "data": data
+            })
+        
+            # 只保留最近100筆
+            if len(event_queue) > 100:
+                event_queue.pop(0)
+        
+        print("目前 event_queue =", event_queue)
+
+        # ==========================
+        # 提供 local_speaker 讀取事件
+        # ==========================
+        @app.route('/events/latest', methods=['GET'])
+        def latest_events():
+        
+            limit = int(request.args.get("limit", 5))
+        
+            with lock:
+                events = event_queue[-limit:]
+        
+            return jsonify(events)
+
+
+        
+        # ==========================
         # Telegram耗時
         # ==========================
         print(
