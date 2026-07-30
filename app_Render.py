@@ -331,7 +331,7 @@ def webhook():
         # ========================================================
         import traceback
         print("\n========== ERROR ==========")
-        print(str(e)
+        print(str(e))
         traceback.print_exc()
         print( "Webhook失敗耗時 =", round(time.time()  - start_time,4),"秒")
         return jsonify({
