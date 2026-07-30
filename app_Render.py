@@ -1,35 +1,138 @@
+# =============================================================================
+# TradingView Webhook → Render → Telegram + Local Speaker
+# 第1步：建立 Flask 系統 + 讀取環境變數
+# 流程：
+#
+# TradingView
+#      |
+#      | Webhook JSON
+#      ▼
+#
+# Render Flask Server
+#
+#      |
+#      |
+#      ├── TELEGRAM_TOKEN
+#      ├── CHAT_ID
+#      └── LOCAL_SPEAKER_URL
+#
+# =============================================================================
+# =============================================================================
+# 第1步:匯入需要使用的套件
+# =============================================================================
 from flask import Flask, request, jsonify
-print("🔥 VERSION 2026-06-02 05:35")
-import requests, json, os, threading 
-from deep_translator import GoogleTranslator
+print("🔥 VERSION 2026-06-02 05:35")# 用來顯示目前版本
+import requests# HTTP連線套件# 用來呼叫 Telegram API
+import json# JSON處理# TradingView 傳來的是 JSON 格式
+import os# 讀取 Render 環境變數
+import threading# 背景執行緒# 後面 Telegram 傳送會使用
+from deep_translator import GoogleTranslator# 翻譯套件# TradingView 訊息可翻譯使用
 
-# ==========================
-# 建立 Flask 應用
-# ==========================
+# =============================================================================
+# 第2步:建立 Flask 應用程式#
+# Flask 是 Render 接收 TradingView webhook 的伺服器#
+# TradingView 傳送：#
+# POST /webhook#
+# Flask 接收後開始處理#
+# =============================================================================
 app = Flask(__name__)
 
-# ==========================
-# 讀取 Telegram 設定（建議使用 Render 環境變數）
-# 在 Render → Dashboard → Environment → Environment Variables 設定
-# TELEGRAM_TOKEN：Telegram Bot Token
-# CHAT_ID：Telegram 收訊聊天 ID
-# ==========================
+# =============================================================================
+# 第3步：讀取 Render 環境變數
+# Render Dashboard
+#       |
+#       ▼
+# Environment Variables
+# 裡面設定：#
+# TELEGRAM_TOKEN
+#     Telegram Bot 的身分密碼
+# CHAT_ID
+#     要接收 Telegram 訊息的聊天室 ID
+# LOCAL_SPEAKER_URL
+#     家中電腦 Python 語音播報網址
+# 範例：#
+# http://192.168.0.40:10000/speak
+# =============================================================================
 
-# ==========================
-# 讀取 Telegram 與本地語音設定
-# ==========================
-# ========================== # 讀取 Telegram 與本地語音設定 # ==========================
-#我的 Render 裡到底有什麼變數CHAT_ID和 LOCAL_SPEAKER_URL 和TELEGRAM_TOKEN
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN", "").strip()#Render中的環境中的設定變數# Telegram Bot API Token 
 CHAT_ID = os.getenv("CHAT_ID", "").strip()#Render中的環境中的設定變數# 要發送的群組或個人 ID 
 LOCAL_SPEAKER_URL = os.getenv("LOCAL_SPEAKER_URL", "").strip()#Render中的環境中的設定變數# 本地語音播報端的 URL，例如 http://192.168.0.40:10000/speak 
-
+# =============================================================================
+# 第4步：啟動時檢查環境變數
+# 如果 Render 沒設定
+# 程式仍然啟動
+# 但是會提醒錯誤
+# =============================================================================
 #print("TELEGRAM_TOKEN =", TELEGRAM_TOKEN)
 #print("CHAT_ID =", CHAT_ID)
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID") 
+else:
+    print("✅ Telegram 設定讀取成功")
 if not LOCAL_SPEAKER_URL:
     print("⚠️ 尚未設定 LOCAL_SPEAKER_URL（本地語音推播端 URL）")
+else:
+    print("✅ Local Speaker 設定讀取成功")
+# =============================================================================
+# 第5步：測試用首頁
+# 瀏覽器輸入：
+# https://你的Render網址/
+# 如果看到： TradingView Webhook Server 運作中
+# 代表 Flask 活著
+# =============================================================================
+@app.route('/')
+def home():
+    return "✅ TradingView Webhook Server 運作中！"
+# =============================================================================
+#  第6步：程式入口
+# 注意： Render 啟動時通常由 gunicorn 呼叫
+# 本段保留給本機測試
+# =============================================================================
+if __name__ == '__main__':
+    # 本地測試用
+    app.run(host='0.0.0.0', port=5000)
+ 
+# =============================================================================
+# 第7步：
+# 建立 Telegram 背景傳送系統
+# 目的：
+# TradingView 不需要等待 Telegram
+# Webhook 收到訊號後：
+# 1. 放入 Queue
+# 2. 立即回覆 TradingView 200
+# 3. 背景 Thread 慢慢送 Telegram
+# 解決：
+# TradingView timeout
+# =============================================================================
+# =============================================================================
+# 匯入 Queue
+# Queue 是 Python 內建的排隊工具
+# 功能：
+# 先進來的訊息
+# 先送出去
+# FIFO:
+# First In
+# First Out
+# =============================================================================
+from queue import Queue
+# =============================================================================
+# 建立 Telegram 傳送佇列
+# TradingView 訊號先放這裡
+# 範例：
+# telegram_queue
+# [
+#   "台指突破24000",
+#   "KD黃金交叉"
+# ]
+# =============================================================================
+telegram_queue = Queue()
+
+# =============================================================================
+# Telegram 傳送函式
+# 功能：真正呼叫 Telegram API
+# 注意：
+# 這個函式不直接給 webhook 使用，而是給背景 Thread 使用
+# =============================================================================
 
 # ==========================
 # 定義 Telegram 傳訊函式
@@ -52,13 +155,11 @@ if not LOCAL_SPEAKER_URL:
 # =============================================================================
 def send_to_telegram(message: str):
     import time
-    t1 = time.time()# 記錄開始時間
+    t1 = time.time()# 記錄開始時間，來觀察 Telegram 花多久
     """
-    傳送訊息到 Telegram Bot
-    參數:
+    傳送訊息到 Telegram Bot參數:
         message (str)
         要發送到 Telegram 的文字內容
-
     範例:
         send_to_telegram("Hello")
         send_to_telegram("台指突破高點")
@@ -68,15 +169,12 @@ def send_to_telegram(message: str):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
 
     # 建立要送給 Telegram API 的 JSON 資料
-    payload = {
-        # Telegram 群組或個人聊天室 ID
-        "chat_id": CHAT_ID,
-        # 要傳送的訊息內容
-        "text": message
+    payload = {        
+        "chat_id": CHAT_ID,        # Telegram 群組或個人聊天室 ID
+        "text": message            # 要傳送的訊息內容
     }
 
     try:
-
         # 發送 HTTP POST 請求給 Telegram
         # json=payload 代表以 JSON 格式送出
         # timeout=2 代表最多等待 2 秒
@@ -96,26 +194,28 @@ def send_to_telegram(message: str):
         print("Telegram耗時 =",round(time.time() - t1, 3),"秒")
 
     except Exception as e:
-        #Telegram timeout，目前你看不到「失敗花了多久」
+        # 如果 Telegram timeout，目前你看不到「失敗花了多久」或網路錯誤
         # 如果連線失敗、網路中斷、
         # Telegram 太慢、超過 timeout
-        # 就會進入這裡
-        
+        # 就會進入這裡        
         print(#Telegram timeout，目前你看不到「失敗花了多久」
             "Telegram失敗耗時 =",
             round(time.time() - t1, 3),
             "秒"
         )
-
         print("Telegram timeout:", e)
 
-
-# ==========================
-# 測試首頁
-# ==========================
-@app.route('/')
-def home():
-    return "✅ TradingView Webhook Server 運作中！"
+# =============================================================================
+# 背景 Telegram Worker，# 這是一個永遠等待工作的執行緒#
+# 流程：
+# Queue 有訊息
+#       |
+#       ▼
+# worker取出
+#       |
+#       ▼
+# send_to_telegram()
+# =============================================================================
 
 # ==========================
 # 測試 Telegram==>https://你的Render網址/test===>請測https://tradingview-webhook-1-ogjq.onrender.com/test如果成功：Telegram 應收到：🚀 測試訊息：Telegram 發送功能正常！
@@ -291,10 +391,4 @@ def webhook():# 定義 webhook 處理函式
 #     return "✅ 測試訊息已發送至 Telegram"
 # =============================================================================
 
-# ==========================
-# 程式入口
-# ==========================
-if __name__ == '__main__':
-    # 本地測試用
-    app.run(host='0.0.0.0', port=5000)
- 
+
