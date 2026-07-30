@@ -116,7 +116,7 @@ if __name__ == '__main__':
 # =============================================================================
 from queue import Queue
 # =============================================================================
-# 建立 Telegram 傳送佇列
+# 第8步：建立 Telegram 傳送佇列
 # TradingView 訊號先放這裡
 # 範例：
 # telegram_queue
@@ -128,30 +128,10 @@ from queue import Queue
 telegram_queue = Queue()
 
 # =============================================================================
-# Telegram 傳送函式
+# 第9步：Telegram 傳送函式
 # 功能：真正呼叫 Telegram API
 # 注意：
 # 這個函式不直接給 webhook 使用，而是給背景 Thread 使用
-# =============================================================================
-
-# ==========================
-# 定義 Telegram 傳訊函式
-# 為什麼有時成功有時 timeout
-# 因為 TradingView 只看：我送出去後3秒內有沒有收到 HTTP 200
-# ==========================
-# =============================================================================
-# def send_to_telegram(message: str):
-#     """將訊息發送到 Telegram"""
-#     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-#     payload = {"chat_id": CHAT_ID, "text": message}
-#     try:
-#         res = requests.post(url, json=payload, timeout=2)
-#         if res.status_code == 200:
-#             print("✅ Telegram 傳送成功")
-#         else:
-#             print("❌ Telegram 傳送失敗，HTTP:", res.status_code, res.text)
-#     except Exception as e:
-#         print("❌ Telegram 傳送失敗:", e)
 # =============================================================================
 def send_to_telegram(message: str):
     import time
@@ -206,7 +186,7 @@ def send_to_telegram(message: str):
         print("Telegram timeout:", e)
 
 # =============================================================================
-# 背景 Telegram Worker，# 這是一個永遠等待工作的執行緒#
+# 第10步：背景 Telegram Worker，# 這是一個永遠等待工作的執行緒#
 # 流程：
 # Queue 有訊息
 #       |
@@ -216,26 +196,210 @@ def send_to_telegram(message: str):
 #       ▼
 # send_to_telegram()
 # =============================================================================
+def telegram_worker():
+    print("✅ Telegram背景執行緒啟動")
+    while True:
+        # 等待 Queue 新訊息
+        message = telegram_queue.get()
+        try:            
+            send_to_telegram(message)# 實際送Telegram
+        except Exception as e:
+            print("Telegram Worker Error:", e )
+        finally:
+            # 告知Queue：
+            # 這筆完成
+            telegram_queue.task_done()
+# =============================================================================
+# 第11步：啟動背景 Thread
+# daemon=True
+# 表示：
+# Flask關閉
+# Thread也一起結束
+# =============================================================================
+threading.Thread(
+    target=telegram_worker,
+    daemon=True
+).start()
 
-# ==========================
-# 測試 Telegram==>https://你的Render網址/test===>請測https://tradingview-webhook-1-ogjq.onrender.com/test如果成功：Telegram 應收到：🚀 測試訊息：Telegram 發送功能正常！
-# ==========================
-@app.route('/test', methods=['GET'])
+# =============================================================================
+# 第12步：測試 Telegram#
+# 使用方式：#
+# 瀏覽器輸入：#
+# https://你的Render網址/test
+# 成功：
+# Telegram收到：
+# 🚀 測試訊息：Telegram 發送功能正常！
+# =============================================================================
+@app.route("/test",methods=["GET"])
 def test_telegram():
-    send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
-    return "✅ 測試訊息已發送至 Telegram"
+    # 注意：
+    # 這裡不是直接send
+    # 而是放入Queue
+    # 模擬Webhook流程
+    telegram_queue.put("🚀 測試訊息：Telegram 發送功能正常！")
+    return ("✅ 測試訊息已加入Telegram Queue")
+
+# =============================================================================
+# 第13步：
+# TradingView Webhook 接收中心
+# 功能：
+# 1. 接收 TradingView 傳來 JSON
+# 2. 顯示原始資料
+# 3. 解析 JSON
+# 4. 建立 Telegram 訊息
+# 5. 丟入 telegram_queue
+# 注意：
+# 這裡「不直接傳 Telegram」
+# 只負責快速接收
+# =============================================================================
+
+@app.route("/webhook",methods=["POST"])
+def webhook():
+    import time
+    # ============================================================
+    # 記錄 webhook 開始時間
+    # 用來測量：TradingView 到 return 200 花多久
+    # ============================================================
+    start_time = time.time()
+    try:
+        # ========================================================
+        # 第1部分：
+        # 印出 TradingView 原始資料
+        # request.data:
+        # 還沒有解析前的原始位元組資料
+        # 用來除錯非常重要
+        # ========================================================
+        print("\n========== RAW DATA ==========")
+        print(request.data)
+        # ========================================================
+        # 印出 HTTP Header
+        # 可以確認：TradingView 是否正確送 JSON
+        # ========================================================
+        print("\n========== HTTP HEADER ==========")
+        print(request.headers)
+        # ========================================================
+        # 第2部分：
+        # JSON解析
+        # TradingView送：
+        # {
+        #    "signal":"BUY",
+        #    "price":23000
+        # }
+        # 變成 Python dictionary
+        # ========================================================
+        data = request.get_json(force=True)
+        print("\n========== JSON DATA ==========")
+        print(data)
+        # ========================================================
+        # 第3部分：建立 Telegram 訊息
+        # json.dumps:
+        # dictionary
+        #       ↓
+        # 文字
+        # ========================================================
+        msg = ("📊 TG收到 TradingView Webhook\n\n"  + json.dumps(data,indent=2, ensure_ascii=False) )
+        print("\n========== Telegram Message ==========")
+        print(msg)
+        # ========================================================
+        # 第4部分：放入 Telegram Queue
+        # 注意：這裡沒有：
+        # send_to_telegram(msg)
+        # 因為直接送會造成 timeout
+        # Queue 放入後立即返回
+        # ========================================================
+        telegram_queue.put(msg)
+        print("✅ 已放入 Telegram Queue")
+        # ========================================================
+        # 計算 Webhook 處理時間
+        # 正常應該：0.001 ~ 0.01 秒左右
+        # ========================================================
+        webhook_time = (time.time()  - start_time)
+        print("Webhook處理時間 =",round(webhook_time,4)"秒")
+        # ========================================================
+        # 最重要：
+        # 立即回覆 TradingView
+        # TradingView只關心：
+        # 3秒內收到 HTTP 200
+        # ========================================================
+        return jsonify({
+            "status":
+            "success",
+            "message":
+            "Webhook received"
+        }), 200
+    except Exception as e:
+        # ========================================================
+        # 錯誤處理
+        # ========================================================
+        import traceback
+        print("\n========== ERROR ==========")
+        print(str(e)
+        traceback.print_exc()
+        print( "Webhook失敗耗時 =", round(time.time()  - start_time,4),"秒")
+        return jsonify({
+            "status":
+            "error",
+            "message":
+            str(e)
+        }),500
+# =============================================================================
+# 第13步：完成目前完整流程：
+
+# TradingView
+#       |
+#       ▼
+#
+# /webhook
+#
+#       |
+#       |
+#       ├── request.data
+#       ├── JSON解析
+#       ├── 建立msg
+#       |
+#       ▼
+#
+# telegram_queue.put()
+#
+#       |
+#       ▼
+#
+# return 200
+#
+#
+#       (TradingView 不 timeout)
+#
+#
+# 背景：
+#
+# telegram_worker()
+#
+#       |
+#       ▼
+#
+# Telegram API
+
+# 下一段：
+#
+# 第14步：
+#
+# event_queue + /events/latest
+#
+# 提供給 local_speaker.py
+#
+# =============================================================================
 
 
-# ==========================
-# 全域鎖與事件佇列
-# ==========================
+
+# =============================================================================
+# 第14步： 全域鎖與事件佇列
+# event_queue 事件儲存系統
+# 功能：保存 TradingView webhook事件
+# 給：local_speaker.py 讀取並播放聲音
+# =============================================================================
 import threading
 lock = threading.Lock()  # 🔒 用於確保多執行緒修改 event_queue 時不衝突
 event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
-# =============================================================================
-# event_id = 0             # 🔢 每筆事件的唯一編號
-# =============================================================================
-
 # ==========================
 # 提供 local_speaker 讀取事件
 # ==========================
@@ -250,145 +414,229 @@ def latest_events():
     return jsonify(events)
 
 
-
-
-
-# 建立 Flask 路由，當收到 POST 請求到 /webhook 時執行 webhook() 函式
-@app.route('/webhook', methods=['POST'])
-def webhook():# 定義 webhook 處理函式
- # 函式說明：接收 TradingView 傳來的 Webhook JSON 資料並轉發到 Telegram
-    """接收 TradingView 的 Webhook JSON 並轉發到 Telegram + 本地語音端"""
-    """
-    📩 TG接收 TradingView 傳來的 JSON 訊號。
-    處理步驟：
-    1. 解析 JSON 資料
-    2. 翻譯（可選）
-    3. 建立唯一事件 ID
-    4. 推送到 Telegram
-    5. 推送到本地語音端
-    6. 儲存事件於 event_queue 供查詢
-    """
-    # ============================================================
-    #加一個時間測量在 webhook 開頭：
-    import time
-    start_time = time.time()
-    # ============================================================
 # =============================================================================
-#     global event_id
+# 第15步：程式啟動入口
+# Render部署檢查
 # =============================================================================
-
-
-    try:
-        # 顯示原始收到的資料區塊標題
-        print("========== 印出原始 Request BodRAW DATA 未解析前的位元組資料）==========")
-        print(request.data)# 印出原始 Request Body（未解析前的位元組資料）
-        # 顯示 HTTP Header 區塊標題
-        print("========== 印出所有 HTTP Header 資訊 ==========")
-        print(request.headers)# 印出所有 HTTP Header 資訊
-
-        # 強制將收到的內容解析成 JSON# 即使 Content-Type 不是 application/json 也會嘗試解析
-        data = request.get_json(force=True)
-        # 顯示解析後 JSON 區塊標題
-        print("========== 顯示解析後JSON DATA區塊標題 ==========")
-        print(data)  # 印出解析完成的 Python Dictionary
-        # 組合要傳送到 Telegram 的訊息內容
-        msg = (
-            # 第一行標題
-            f"📊 TG收到由Tv Webhook資料：\n"
-            # 將 JSON 格式化輸出
-            # indent=2 代表縮排 2 格
-            # ensure_ascii=False 代表保留中文不要轉 Unicode
-            f"{json.dumps(data, indent=2, ensure_ascii=False)}"
-        )
-
-        # ==========================
-        # Telegram開始計時
-        # ==========================
-        tg_start = time.time()
-        # 發送 Telegram
-        send_to_telegram(msg)# 呼叫 Telegram 發送函式
-        # ==========================
-        # 儲存事件供 local_speaker 讀取
-        # ==========================
-        global event_queue
-        
-        with lock:
-            event_queue.append({
-                "id": int(time.time()),
-                "data": data
-            })
-        
-            # 只保留最近100筆
-            if len(event_queue) > 100:
-                event_queue.pop(0)
-        
-        print("目前 event_queue =", event_queue)
-
-       
-
-
-        
-        # ==========================
-        # Telegram耗時
-        # ==========================
-        print(
-            "Telegram區段耗時 =",
-            round(time.time() - tg_start, 3),
-            "秒"
-        )
-
-        # ==========================
-        # Webhook總耗時
-        # ==========================
-        print(
-            "Webhook總耗時 =",
-            round(time.time() - start_time, 3),
-            "秒"
-        )
-        # ==========================
-        # 回傳成功給 TradingView
-        # ==========================
-        return jsonify({# 回傳成功
-            "status": "success",
-            "message": "Data received"
-        }), 200
-
-    except Exception as e:
-
-        import traceback
-
-        print("========== ERROR ==========")
-
-        print(str(e))
-
-        traceback.print_exc()
-
-        # ==========================
-        # 發生錯誤時也計算耗時
-        # ==========================
-        print(
-            "Webhook失敗耗時 =",
-            round(time.time() - start_time, 3),
-            "秒"
-        )
-
-        return jsonify({
-            "status": "error",
-            "message": str(e)
-        }), 500
-    
-    
 # =============================================================================
-# # ==========================
-# # 測試 Telegram 傳送訊息
-# # ==========================
+# 啟動前檢查函式
+## 目的：
+## Render重新啟動時
+# 確認重要設定
+## =============================================================================
+def startup_check():
+    print("\n==============================")
+    print("🚀 TradingView Webhook Server")
+    print("==============================\n")
+    # --------------------------------------------------
+    # 檢查 Telegram Token
+    # --------------------------------------------------
+    if TELEGRAM_TOKEN:
+        print(            "✅ TELEGRAM_TOKEN OK"       )
+    else:
+        print(            "❌ TELEGRAM_TOKEN 缺少"        )
+    # --------------------------------------------------
+    # 檢查 Chat ID
+    # --------------------------------------------------
+    if CHAT_ID:
+        print(
+            "✅ CHAT_ID OK"
+        )
+    else:
+        print(
+            "❌ CHAT_ID 缺少"
+        )
+
+    # --------------------------------------------------
+    # 檢查 Local Speaker
+    # --------------------------------------------------
+    if LOCAL_SPEAKER_URL:
+        print(
+            "✅ LOCAL_SPEAKER_URL OK"
+        )
+    else:
+        print(
+            "⚠️ LOCAL_SPEAKER_URL 未設定"
+        )
+    print("\n==============================")
+    print("Webhook網址:")
+    print("/webhook")
+    print("Telegram測試:")
+    print("/test")
+    print("語音事件:")
+    print("/events/latest")
+    print("==============================\n")
+# =============================================================================
+# 執行啟動檢查
+#
+# Render啟動時會看到結果
+#
+# =============================================================================
+startup_check()
+# =============================================================================
+# 本機測試啟動
+##
+# Render正式環境：
+## 使用 gunicorn
+### 例如：
+## gunicorn app:app
+#
+# 不會走下面
+##
+# 本機測試：
+## python app.py
+## 會走下面
+## =============================================================================
+if __name__ == "__main__":
+    print(
+        "🔥 本機 Flask 測試模式啟動"
+    )
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+    )
+
+
+# =============================================================================
+# 
+# # 建立 Flask 路由，當收到 POST 請求到 /webhook 時執行 webhook() 函式
+# @app.route('/webhook', methods=['POST'])
+# def webhook():# 定義 webhook 處理函式
+#  # 函式說明：接收 TradingView 傳來的 Webhook JSON 資料並轉發到 Telegram
+#     """接收 TradingView 的 Webhook JSON 並轉發到 Telegram + 本地語音端"""
+#     """
+#     📩 TG接收 TradingView 傳來的 JSON 訊號。
+#     處理步驟：
+#     1. 解析 JSON 資料
+#     2. 翻譯（可選）
+#     3. 建立唯一事件 ID
+#     4. 推送到 Telegram
+#     5. 推送到本地語音端
+#     6. 儲存事件於 event_queue 供查詢
+#     """
+#     # ============================================================
+#     #加一個時間測量在 webhook 開頭：
+#     import time
+#     start_time = time.time()
+#     # ============================================================
 # # =============================================================================
-# # @app.route('/test', methods=['GET'])
+# #     global event_id
 # # =============================================================================
-# def test_telegram():
-#     """手動測試 Telegram 是否能收到訊息"""
-#     send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
-#     return "✅ 測試訊息已發送至 Telegram"
+# 
+# 
+#     try:
+#         # 顯示原始收到的資料區塊標題
+#         print("========== 印出原始 Request BodRAW DATA 未解析前的位元組資料）==========")
+#         print(request.data)# 印出原始 Request Body（未解析前的位元組資料）
+#         # 顯示 HTTP Header 區塊標題
+#         print("========== 印出所有 HTTP Header 資訊 ==========")
+#         print(request.headers)# 印出所有 HTTP Header 資訊
+# 
+#         # 強制將收到的內容解析成 JSON# 即使 Content-Type 不是 application/json 也會嘗試解析
+#         data = request.get_json(force=True)
+#         # 顯示解析後 JSON 區塊標題
+#         print("========== 顯示解析後JSON DATA區塊標題 ==========")
+#         print(data)  # 印出解析完成的 Python Dictionary
+#         # 組合要傳送到 Telegram 的訊息內容
+#         msg = (
+#             # 第一行標題
+#             f"📊 TG收到由Tv Webhook資料：\n"
+#             # 將 JSON 格式化輸出
+#             # indent=2 代表縮排 2 格
+#             # ensure_ascii=False 代表保留中文不要轉 Unicode
+#             f"{json.dumps(data, indent=2, ensure_ascii=False)}"
+#         )
+# 
+#         # ==========================
+#         # Telegram開始計時
+#         # ==========================
+#         tg_start = time.time()
+#         # 發送 Telegram
+#         send_to_telegram(msg)# 呼叫 Telegram 發送函式
+#         # ==========================
+#         # 儲存事件供 local_speaker 讀取
+#         # ==========================
+#         global event_queue
+#         
+#         with lock:
+#             event_queue.append({
+#                 "id": int(time.time()),
+#                 "data": data
+#             })
+#         
+#             # 只保留最近100筆
+#             if len(event_queue) > 100:
+#                 event_queue.pop(0)
+#         
+#         print("目前 event_queue =", event_queue)
+# 
+#        
+# 
+# 
+#         
+#         # ==========================
+#         # Telegram耗時
+#         # ==========================
+#         print(
+#             "Telegram區段耗時 =",
+#             round(time.time() - tg_start, 3),
+#             "秒"
+#         )
+# 
+#         # ==========================
+#         # Webhook總耗時
+#         # ==========================
+#         print(
+#             "Webhook總耗時 =",
+#             round(time.time() - start_time, 3),
+#             "秒"
+#         )
+#         # ==========================
+#         # 回傳成功給 TradingView
+#         # ==========================
+#         return jsonify({# 回傳成功
+#             "status": "success",
+#             "message": "Data received"
+#         }), 200
+# 
+#     except Exception as e:
+# 
+#         import traceback
+# 
+#         print("========== ERROR ==========")
+# 
+#         print(str(e))
+# 
+#         traceback.print_exc()
+# 
+#         # ==========================
+#         # 發生錯誤時也計算耗時
+#         # ==========================
+#         print(
+#             "Webhook失敗耗時 =",
+#             round(time.time() - start_time, 3),
+#             "秒"
+#         )
+# 
+#         return jsonify({
+#             "status": "error",
+#             "message": str(e)
+#         }), 500
+#     
+#     
+# # =============================================================================
+# # # ==========================
+# # # 測試 Telegram 傳送訊息
+# # # ==========================
+# # # =============================================================================
+# # # @app.route('/test', methods=['GET'])
+# # # =============================================================================
+# # def test_telegram():
+# #     """手動測試 Telegram 是否能收到訊息"""
+# #     send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
+# #     return "✅ 測試訊息已發送至 Telegram"
+# # =============================================================================
 # =============================================================================
 
 
