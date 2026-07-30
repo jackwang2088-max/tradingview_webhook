@@ -1,8 +1,7 @@
 # =============================================================================
 # TradingView Webhook → Render → Telegram + Local Speaker
 # 第1步：建立 Flask 系統 + 讀取環境變數
-# 流程：
-#
+# 流程：#
 # TradingView
 #      |
 #      | Webhook JSON
