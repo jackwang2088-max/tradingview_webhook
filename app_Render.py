@@ -313,7 +313,7 @@ def webhook():
         # 正常應該：0.001 ~ 0.01 秒左右
         # ========================================================
         webhook_time = (time.time()  - start_time)
-        print("Webhook處理時間 =",round(webhook_time,4)"秒")
+        print("Webhook處理時間 =", round(webhook_time,4), "秒")
         # ========================================================
         # 最重要：
         # 立即回覆 TradingView
