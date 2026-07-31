@@ -203,6 +203,7 @@ def telegram_worker():
         message = telegram_queue.get()
         try:            
             send_to_telegram(message)# 實際送Telegram
+            print("④ TG 完成", time.strftime("%H:%M:%S"))
         except Exception as e:
             print("Telegram Worker Error:", e )
         finally:
@@ -221,7 +222,7 @@ threading.Thread(
     target=telegram_worker,
     daemon=True
 ).start()
-print("④ TG 完成", time.strftime("%H:%M:%S"))
+
 # =============================================================================
 # 第12步：測試 Telegram#
 # 使用方式：#
