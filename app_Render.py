@@ -184,7 +184,7 @@ def send_to_telegram(message: str):
             "秒"
         )
         print("Telegram timeout:", e)
-print("④ TG 完成", time.strftime("%H:%M:%S"))
+#print("④ TG 完成", time.strftime("%H:%M:%S"))
 # =============================================================================
 # 第10步：背景 Telegram Worker，# 這是一個永遠等待工作的執行緒#
 # 流程：
