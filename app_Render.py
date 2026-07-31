@@ -283,7 +283,8 @@ def webhook():
         # 用來除錯非常重要
         # ========================================================
         print("\n========== RAW DATA ==========")
-        print(request.data)
+        #print(request.data)
+        print(request.data.decode("utf-8"))
         # ========================================================
         # 印出 HTTP Header
         # 可以確認：TradingView 是否正確送 JSON
