@@ -291,7 +291,14 @@ def webhook():
         # }
         # 變成 Python dictionary
         # ========================================================
-        data = request.get_json(force=True)
+        raw = request.get_data(as_text=True)
+        print("RAW =", raw)        
+        #import json        
+        # 修正 TradingView 傳來的非法換行
+        raw = raw.replace("\r\n", "\\n")
+        raw = raw.replace("\n", "\\n")
+        
+        data = json.loads(raw)
         print("\n========== JSON DATA ==========")
         print(data)
         # ========================================================
