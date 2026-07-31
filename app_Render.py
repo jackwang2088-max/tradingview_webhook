@@ -133,7 +133,8 @@ telegram_queue = Queue()
 # =============================================================================
 def send_to_telegram(message: str):
     import time
-    t1 = time.time()# 記錄開始時間，來觀察 Telegram 花多久
+    # 記錄開始時間，來觀察 Telegram 花多久
+    t1 = time.time()
     """
     傳送訊息到 Telegram Bot參數:
         message (str)
