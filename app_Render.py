@@ -258,6 +258,15 @@ def test_telegram():
 
 @app.route("/webhook",methods=["POST"])
 def webhook():
+    import uuid
+    reqid = uuid.uuid4().hex[:8]    
+    print(f"\n========== Request ID: {reqid} ==========")
+    print("Method =", request.method)
+    print("Path   =", request.path)
+    print("X-Request-Start =", request.headers.get("X-Request-Start"))
+    print("Rndr-Id         =", request.headers.get("Rndr-Id"))
+    
+    print(f"\n========== {reqid} ==========")
     print("① webhook 進來", time.strftime("%H:%M:%S"))
     #import time
     # ============================================================
@@ -320,6 +329,7 @@ def webhook():
         # ========================================================
         telegram_queue.put(msg)
         print("✅ 已放入 Telegram Queue")
+        print("Queue Size =", telegram_queue.qsize())
         # ========================================================
         # 計算 Webhook 處理時間
         # 正常應該：0.001 ~ 0.01 秒左右
@@ -333,12 +343,14 @@ def webhook():
         # TradingView只關心：
         # 3秒內收到 HTTP 200
         # ========================================================
-        return jsonify({
-            "status":
-            "success",
-            "message":
-            "Webhook received"
-        }), 200
+        print("② 準備 return 200", time.strftime("%H:%M:%S"))
+        print("③ 建立 Response")        
+        resp = jsonify({
+            "status": "success",
+            "message": "Webhook received"
+        })        
+        print("④ Response 建立完成")        
+        return resp, 200
     except Exception as e:
         # ========================================================
         # 錯誤處理
