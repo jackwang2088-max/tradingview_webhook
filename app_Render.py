@@ -259,7 +259,7 @@ def test_telegram():
 @app.route("/webhook",methods=["POST"])
 def webhook():
     print("① webhook 進來", time.strftime("%H:%M:%S"))
-    import time
+    #import time
     # ============================================================
     # 記錄 webhook 開始時間
     # 用來測量：TradingView 到 return 200 花多久
