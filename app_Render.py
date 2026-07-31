@@ -259,21 +259,30 @@ def test_telegram():
 @app.route("/webhook",methods=["POST"])
 def webhook():
     import uuid
-    reqid = uuid.uuid4().hex[:8]    
-    print(f"\n========== Request ID: {reqid} ==========")
+    # ============================================================
+    # 建立唯一 Request ID
+    # 用來區分每一次 TradingView webhook
+    # ============================================================
+    reqid = uuid.uuid4().hex[:8]
+    # ============================================================
+    # 記錄 webhook 開始時間
+    # 用來測量：
+    # TradingView → Flask → return 200 花多久
+    # ============================================================
+    start_time = time.time()
+    print("\n")
+    print("=" * 70)
+    print(f"🚀 WEBHOOK START  Request ID: {reqid}")
+    print("時間 =", datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
+    print("=" * 70)
     print("Method =", request.method)
     print("Path   =", request.path)
     print("X-Request-Start =", request.headers.get("X-Request-Start"))
     print("Rndr-Id         =", request.headers.get("Rndr-Id"))
-    
-    print(f"\n========== {reqid} ==========")
-    print("① webhook 進來", time.strftime("%H:%M:%S"))
-    #import time
-    # ============================================================
-    # 記錄 webhook 開始時間
-    # 用來測量：TradingView 到 return 200 花多久
-    # ============================================================
-    start_time = time.time()
+    print(
+        f"① [{reqid}] Flask 收到 request :",
+        datetime.now().strftime("%H:%M:%S.%f")
+    )
     try:
         # ========================================================
         # 第1部分：
@@ -283,11 +292,19 @@ def webhook():
         # 用來除錯非常重要
         # ========================================================
         print("\n========== RAW DATA ==========")
-        #print(request.data)
-        print(request.data.decode("utf-8"))
+        raw_bytes = request.data
+        print(raw_bytes.decode("utf-8"))
+        print(
+            f"② [{reqid}] request.data 讀取完成 :",
+            datetime.now().strftime("%H:%M:%S.%f"),
+            "耗時",
+            round(time.time()-start_time,6),
+            "秒"
+        )
         # ========================================================
         # 印出 HTTP Header
-        # 可以確認：TradingView 是否正確送 JSON
+        # 可以確認：
+        # TradingView 是否正確送 JSON
         # ========================================================
         print("\n========== HTTP HEADER ==========")
         print(request.headers)
@@ -302,28 +319,44 @@ def webhook():
         # 變成 Python dictionary
         # ========================================================
         raw = request.get_data(as_text=True)
-        print("RAW =", raw)        
-        #import json        
+        print("RAW =", raw)
         # 修正 TradingView 傳來的非法換行
         raw = raw.replace("\r\n", "\\n")
         raw = raw.replace("\n", "\\n")
-        
         data = json.loads(raw)
         print("\n========== JSON DATA ==========")
         print(data)
+        print(
+            f"③ [{reqid}] JSON解析完成 :",
+            datetime.now().strftime("%H:%M:%S.%f"),
+            "耗時",
+            round(time.time()-start_time,6),
+            "秒"
+        )
         # ========================================================
-        # 第3部分：建立 Telegram 訊息
+        # 第3部分：
+        # 建立 Telegram 訊息
         # json.dumps:
         # dictionary
         #       ↓
         # 文字
         # ========================================================
-        msg = ("📊 TG收到 TradingView Webhook\n\n"  + json.dumps(data,indent=2, ensure_ascii=False) )
+        msg = (
+            "📊 TG收到 TradingView Webhook\n\n"
+            +
+            json.dumps(
+                data,
+                indent=2,
+                ensure_ascii=False
+            )
+        )
         print("\n========== Telegram Message ==========")
         print(msg)
         # ========================================================
-        # 第4部分：放入 Telegram Queue
-        # 注意：這裡沒有：
+        # 第4部分：
+        # 放入 Telegram Queue
+        # 注意：
+        # 這裡沒有：
         # send_to_telegram(msg)
         # 因為直接送會造成 timeout
         # Queue 放入後立即返回
@@ -331,41 +364,82 @@ def webhook():
         telegram_queue.put(msg)
         print("✅ 已放入 Telegram Queue")
         print("Queue Size =", telegram_queue.qsize())
+        print(
+            f"④ [{reqid}] Queue加入完成 :",
+            datetime.now().strftime("%H:%M:%S.%f"),
+            "耗時",
+            round(time.time()-start_time,6),
+            "秒"
+        )
         # ========================================================
         # 計算 Webhook 處理時間
-        # 正常應該：0.001 ~ 0.01 秒左右
+        # 正常應該：
+        # 0.001 ~ 0.01 秒左右
         # ========================================================
-        webhook_time = (time.time()  - start_time)
-        print("Webhook處理時間 =", round(webhook_time,4), "秒")
-        print("② 準備 return 200", time.strftime("%H:%M:%S"))
+        webhook_time = time.time() - start_time
+        print(
+            "Webhook處理時間 =",
+            round(webhook_time,4),
+            "秒"
+        )
+        # ========================================================
+        # 建立 HTTP Response
+        # 測量：
+        # Flask 建立回覆花多少時間
+        # ========================================================
+        print(
+            f"⑤ [{reqid}] 準備建立 HTTP Response :",
+            datetime.now().strftime("%H:%M:%S.%f")
+        )
+        resp = jsonify({
+            "status": "success",
+            "message": "Webhook received"
+        })
+        print(
+            f"⑥ [{reqid}] Response 建立完成 :",
+            datetime.now().strftime("%H:%M:%S.%f"),
+            "總耗時",
+            round(time.time()-start_time,6),
+            "秒"
+        )
         # ========================================================
         # 最重要：
         # 立即回覆 TradingView
         # TradingView只關心：
         # 3秒內收到 HTTP 200
         # ========================================================
-        print("② 準備 return 200", time.strftime("%H:%M:%S"))
-        print("③ 建立 Response")        
-        resp = jsonify({
-            "status": "success",
-            "message": "Webhook received"
-        })        
-        print("④ Response 建立完成")        
-        return resp, 200
+        print(
+            f"⑦ [{reqid}] Flask return 200 前 :",
+            datetime.now().strftime("%H:%M:%S.%f")
+        )
+        print("=" * 70)
+        print(
+            f"✅ WEBHOOK END Request ID={reqid}",
+            "總耗時",
+            round(time.time()-start_time,6),
+            "秒"
+        )
+        print("=" * 70)
+        return resp,200
     except Exception as e:
         # ========================================================
         # 錯誤處理
         # ========================================================
         import traceback
         print("\n========== ERROR ==========")
+        print(
+            f"❌ Request ID={reqid}"
+        )
         print(str(e))
         traceback.print_exc()
-        print( "Webhook失敗耗時 =", round(time.time()  - start_time,4),"秒")
+        print(
+            "Webhook失敗耗時 =",
+            round(time.time()-start_time,4),
+            "秒"
+        )
         return jsonify({
-            "status":
-            "error",
-            "message":
-            str(e)
+            "status":"error",
+            "message":str(e)
         }),500
 # =============================================================================
 # 第13步：完成目前完整流程：
