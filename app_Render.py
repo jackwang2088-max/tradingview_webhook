@@ -26,6 +26,7 @@ import os# 讀取 Render 環境變數
 import threading# 背景執行緒# 後面 Telegram 傳送會使用
 from deep_translator import GoogleTranslator# 翻譯套件# TradingView 訊息可翻譯使用
 import time
+#from datetime import datetime
 
 # =============================================================================
 # 第2步:建立 Flask 應用程式#
