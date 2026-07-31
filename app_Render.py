@@ -200,6 +200,8 @@ def telegram_worker():
     while True:
         # 等待 Queue 新訊息
         message = telegram_queue.get()
+        print("③ Queue取出，開始送TG",time.strftime("%H:%M:%S"))
+
         try:            
             send_to_telegram(message)# 實際送Telegram
             print("④ TG 完成", time.strftime("%H:%M:%S"))
@@ -216,7 +218,7 @@ def telegram_worker():
 # Flask關閉
 # Thread也一起結束
 # =============================================================================
-print("③ Worker 開始送 TG", time.strftime("%H:%M:%S"))
+print("③ Telegram Worker 啟動", time.strftime("%H:%M:%S"))
 threading.Thread(
     target=telegram_worker,
     daemon=True
