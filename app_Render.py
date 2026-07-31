@@ -182,7 +182,7 @@ def send_to_telegram(message: str):
             "秒"
         )
         print("Telegram timeout:", e)
-
+print("④ TG 完成", time.strftime("%H:%M:%S"))
 # =============================================================================
 # 第10步：背景 Telegram Worker，# 這是一個永遠等待工作的執行緒#
 # 流程：
@@ -214,11 +214,12 @@ def telegram_worker():
 # Flask關閉
 # Thread也一起結束
 # =============================================================================
+print("③ Worker 開始送 TG", time.strftime("%H:%M:%S"))
 threading.Thread(
     target=telegram_worker,
     daemon=True
 ).start()
-
+print("④ TG 完成", time.strftime("%H:%M:%S"))
 # =============================================================================
 # 第12步：測試 Telegram#
 # 使用方式：#
@@ -253,6 +254,7 @@ def test_telegram():
 
 @app.route("/webhook",methods=["POST"])
 def webhook():
+    print("① webhook 進來", time.strftime("%H:%M:%S"))
     import time
     # ============================================================
     # 記錄 webhook 開始時間
@@ -313,6 +315,7 @@ def webhook():
         # ========================================================
         webhook_time = (time.time()  - start_time)
         print("Webhook處理時間 =", round(webhook_time,4), "秒")
+        print("② 準備 return 200", time.strftime("%H:%M:%S"))
         # ========================================================
         # 最重要：
         # 立即回覆 TradingView
