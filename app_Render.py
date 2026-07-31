@@ -133,7 +133,7 @@ telegram_queue = Queue()
 # 這個函式不直接給 webhook 使用，而是給背景 Thread 使用
 # =============================================================================
 def send_to_telegram(message: str):
-    import time
+    
     # 記錄開始時間，來觀察 Telegram 花多久
     t1 = time.time()
     """
