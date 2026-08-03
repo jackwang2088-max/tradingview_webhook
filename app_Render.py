@@ -202,12 +202,14 @@ def telegram_worker():
         # 等待 Queue 新訊息
         print(
             "【W3】等待 Queue...",
-            time.strftime("%H:%M:%S")
+            time.strftime("%H:%M:%S"),
+            "Thread=",
+            threading.current_thread().name
         )
         message = telegram_queue.get()
         print(
             "【W4】Queue取出，開始送TG",
-            time.strftime("%H:%M:%S")
+            message[:60]
         )
 
         try:            
@@ -233,10 +235,17 @@ def telegram_worker():
 # Thread也一起結束
 # =============================================================================
 print("【W0】Telegram Worker 啟動", time.strftime("%H:%M:%S"))
-threading.Thread(
+#threading.Thread(
+#    target=telegram_worker,
+#    daemon=True
+#).start()
+
+worker_thread = threading.Thread(
     target=telegram_worker,
     daemon=True
-).start()
+)
+
+worker_thread.start()
 
 # =============================================================================
 # 第12步：測試 Telegram#
@@ -416,7 +425,14 @@ def webhook():
         # ========================================================
        
         print("Webhook Queue ID=",id(telegram_queue))        
-        telegram_queue.put(msg)   
+        telegram_queue.put(msg) 
+        print("Worker Alive =", worker_thread.is_alive())
+        print("Queue Size =", telegram_queue.qsize())
+        print("Queue Empty =", telegram_queue.empty())
+        
+        import threading
+        print("目前執行緒 =", threading.current_thread().name)
+        
         print("✅ 已放入 Telegram Queue")
         print("Queue Size =", telegram_queue.qsize())
                 
