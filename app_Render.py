@@ -17,7 +17,7 @@
 # 第1步:匯入需要使用的套件
 # =============================================================================
 from flask import Flask, request, jsonify
-print("🔥 VERSION 2026-08-03 01:40 DEBUG-LOG V2")# 用來顯示目前版本
+print("🔥 VERSION 2026-08-04 08:45 DEBUG-LOG V2")# 用來顯示目前版本
 import requests# HTTP連線套件# 用來呼叫 Telegram API
 import json# JSON處理# TradingView 傳來的是 JSON 格式
 import os# 讀取 Render 環境變數
@@ -194,8 +194,11 @@ def send_to_telegram(message: str):
 #       ▼
 # send_to_telegram()
 # =============================================================================
-def telegram_worker():
+def telegram_worker():    
     import traceback
+    print("Worker current =", threading.current_thread())
+    print("Worker ident   =", threading.get_ident())
+    print("Worker native  =", threading.get_native_id())
     try:
         print("【W1】Telegram背景執行緒啟動")
         print("【W2】Worker Queue ID=", id(telegram_queue))
@@ -227,12 +230,20 @@ print("【W0】Telegram Worker 啟動", time.strftime("%H:%M:%S"))
 #    daemon=True
 #).start()
 
-worker_thread = threading.Thread(
-    target=telegram_worker,
-    daemon=True
-)
-
+worker_thread = threading.Thread(target=telegram_worker,daemon=True,name="TG_WORKER")
 worker_thread.start()
+
+#print("Start Thread Object =", worker_thread)
+#print("Start ident =", worker_thread.ident)
+#print("Start native id =", worker_thread.native_id)
+#我希望你加 3 行，不要改其他程式
+print("===== Thread Start =====")
+print("worker_thread =", worker_thread)
+print("alive =", worker_thread.is_alive())
+print("ident =", worker_thread.ident)
+print("native =", worker_thread.native_id)
+print("========================"
+
 
 # =============================================================================
 # 第12步：測試 Telegram#
@@ -418,11 +429,16 @@ def webhook():
         
         print("Worker Alive =", worker_thread.is_alive())
         print("Worker Ident =", worker_thread.ident)
-        print("【W1】ident=",threading.get_ident())
+        #print("【W1】ident=",threading.get_ident())==>這個名稱容易混淆。改成【WEBHOOK Thread ident】
+        print("【WEBHOOK Thread ident】=", threading.get_ident())
         print("Queue Size =", telegram_queue.qsize())
         print("Queue Empty =", telegram_queue.empty())
         
-        #import threading
+        print("worker_thread =", worker_thread)
+        print("is_alive =", worker_thread.is_alive())
+        print("worker.ident =", worker_thread.ident)
+        print("current.ident =", threading.get_ident())
+        print("enumerate =", threading.enumerate())
         print("目前執行緒 =", threading.current_thread().name)
         
         print("✅ 已放入 Telegram Queue")
