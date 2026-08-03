@@ -205,13 +205,22 @@ def telegram_worker():
             time.strftime("%H:%M:%S")
         )
         message = telegram_queue.get()
-        print("【W4】Queue取出，開始送TG",time.strftime("%H:%M:%S"))
+        print(
+            "【W4】Queue取出，開始送TG",
+            time.strftime("%H:%M:%S")
+        )
 
         try:            
             send_to_telegram(message)# 實際送Telegram
-            print("【W5】TG 完成", time.strftime("%H:%M:%S"))
+            print(
+                "【W5】TG完成",
+                time.strftime("%H:%M:%S")
+            )
         except Exception as e:
-            print("【WERR】Telegram Worker Error:", e )
+            print(
+                "【WERR】Telegram Worker Error:",
+                e
+            )
         finally:
             # 告知Queue：
             # 這筆完成
