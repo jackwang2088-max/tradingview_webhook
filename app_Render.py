@@ -196,8 +196,10 @@ def send_to_telegram(message: str):
 #       ▼
 # send_to_telegram()
 # =============================================================================
+
 def telegram_worker():
     print("✅ Telegram背景執行緒啟動")
+    print("Worker Queue ID=",id(telegram_queue))
     while True:
         # 等待 Queue 新訊息
         message = telegram_queue.get()
@@ -401,9 +403,12 @@ def webhook():
         # 因為直接送會造成 timeout
         # Queue 放入後立即返回
         # ========================================================
-        telegram_queue.put(msg)
-        print("✅ 已放入 Telegram Queue")
+       
+        print("Webhook Queue ID=",id(telegram_queue))        
+        telegram_queue.put(msg)   
+         print("✅ 已放入 Telegram Queue")
         print("Queue Size =", telegram_queue.qsize())
+                
         print(
             f"④ [{reqid}] Queue加入完成 :",
             datetime.now().strftime("%H:%M:%S.%f"),
