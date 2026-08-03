@@ -224,7 +224,7 @@ def telegram_worker():
 # Flask關閉
 # Thread也一起結束
 # =============================================================================
-print("③ Telegram Worker 啟動", time.strftime("%H:%M:%S"))
+print("【W0】Telegram Worker 啟動", time.strftime("%H:%M:%S"))
 threading.Thread(
     target=telegram_worker,
     daemon=True
