@@ -194,47 +194,26 @@ def send_to_telegram(message: str):
 #       ▼
 # send_to_telegram()
 # =============================================================================
-
 def telegram_worker():
-    print( "【W1】Telegram背景執行緒啟動")
-    print("【W2】Worker Queue ID=",id(telegram_queue))
-    while True:
-        # 等待 Queue 新訊息
-        print(
-            "【W3】等待 Queue...",
-            time.strftime("%H:%M:%S"),
-            "Thread=",
-            threading.current_thread().name
-        )
-        message = telegram_queue.get()
-        print(
-            "【W4】Queue取出，開始送TG",
-            message[:60]
-        )
-
-        try:            
-            send_to_telegram(message)# 實際送Telegram
-            print(
-                "【W5】TG完成",
-                time.strftime("%H:%M:%S")
-            )
-        except Exception as e:
-            print(
-                "【WERR】Telegram Worker Error:",
-                e
-            )
-        finally:
-            # 告知Queue：
-            # 這筆完成
-            telegram_queue.task_done()
-
+    import traceback
+    try:
+        print("【W1】Telegram背景執行緒啟動")
+        print("【W2】Worker Queue ID=", id(telegram_queue))
+        while True:
+            print("【W3】等待 Queue...",time.strftime("%H:%M:%S"),"Thread=",threading.current_thread().name)
+            message = telegram_queue.get()
+            print("【W4】Queue取出，開始送TG",message[:60])
+            try:
+                send_to_telegram(message)
+                print("【W5】TG完成",time.strftime("%H:%M:%S"))
+            except Exception as e:
+                print("【WERR】Telegram Worker Error:",e)
+                traceback.print_exc()
+            finally:
+                telegram_queue.task_done()
     except Exception:
-    
-            import traceback
-    
-            print("★★★★★ Worker Crash ★★★★★")
-    
-            traceback.print_exc()
+        print("★★★★★ Worker Crash ★★★★★")
+        traceback.print_exc()
 # =============================================================================
 # 第11步：啟動背景 Thread
 # daemon=True
