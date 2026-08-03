@@ -202,7 +202,7 @@ def telegram_worker():
         while True:
             print("【W3】等待 Queue...",time.strftime("%H:%M:%S"),"Thread=",threading.current_thread().name)
             message = telegram_queue.get()
-            print("【W4】Queue取出，開始送TG",message[:60])
+            print("【W4】Queue取出，開始送TG",message[:50])
             try:
                 send_to_telegram(message)
                 print("【W5】TG完成",time.strftime("%H:%M:%S"))
@@ -422,7 +422,7 @@ def webhook():
         print("Queue Size =", telegram_queue.qsize())
         print("Queue Empty =", telegram_queue.empty())
         
-        import threading
+        #import threading
         print("目前執行緒 =", threading.current_thread().name)
         
         print("✅ 已放入 Telegram Queue")
@@ -566,7 +566,7 @@ def webhook():
 # 功能：保存 TradingView webhook事件
 # 給：local_speaker.py 讀取並播放聲音
 # =============================================================================
-import threading
+#import threading
 lock = threading.Lock()  # 🔒 用於確保多執行緒修改 event_queue 時不衝突
 event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
 # ==========================
