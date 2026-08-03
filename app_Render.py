@@ -19,14 +19,14 @@
 # 第1步:匯入需要使用的套件
 # =============================================================================
 from flask import Flask, request, jsonify
-print("🔥 VERSION 2026-06-02 05:35")# 用來顯示目前版本
+print("🔥 VERSION 2026-08-03 01:40 DEBUG-LOG V2")# 用來顯示目前版本
 import requests# HTTP連線套件# 用來呼叫 Telegram API
 import json# JSON處理# TradingView 傳來的是 JSON 格式
 import os# 讀取 Render 環境變數
 import threading# 背景執行緒# 後面 Telegram 傳送會使用
 from deep_translator import GoogleTranslator# 翻譯套件# TradingView 訊息可翻譯使用
 import time
-#from datetime import datetime
+from datetime import datetime
 
 # =============================================================================
 # 第2步:建立 Flask 應用程式#
