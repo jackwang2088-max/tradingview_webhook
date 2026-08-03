@@ -279,6 +279,45 @@ def webhook():
     print("Method =", request.method)
     print("Path   =", request.path)
     print("X-Request-Start =", request.headers.get("X-Request-Start"))
+    # ============================================================
+    # Render Proxy 收到 Request 的時間
+    # X-Request-Start 是 Render 內部記錄的 Unix Timestamp(微秒)
+    # 換算後方便與 Flask 收到時間比較
+    # ============================================================
+    
+    x_request_start = request.headers.get("X-Request-Start")
+    
+    if x_request_start:
+        try:
+            proxy_time = datetime.utcfromtimestamp(
+                int(x_request_start) / 1_000_000
+            )
+    
+            print(
+                "Render Proxy 收到時間(UTC) =",
+                proxy_time.strftime("%Y-%m-%d %H:%M:%S.%f")
+            )
+    
+            print(
+                "Flask 收到時間(UTC)       =",
+                datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S.%f")
+            )
+    
+            print(
+                "Render Proxy → Flask =",
+                round(
+                    (
+                        datetime.utcnow() - proxy_time
+                    ).total_seconds(),
+                    6
+                ),
+                "秒"
+            )
+    
+        except Exception as ex:
+            print("X-Request-Start 解析失敗：", ex)
+
+
     print("Rndr-Id         =", request.headers.get("Rndr-Id"))
     print(
         f"① [{reqid}] Flask 收到 request :",
