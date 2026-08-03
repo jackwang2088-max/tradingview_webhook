@@ -242,7 +242,7 @@ print("worker_thread =", worker_thread)
 print("alive =", worker_thread.is_alive())
 print("ident =", worker_thread.ident)
 print("native =", worker_thread.native_id)
-print("========================"
+print("========================")
 
 
 # =============================================================================
