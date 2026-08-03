@@ -452,6 +452,12 @@ def webhook():
             f"⑦ [{reqid}] Flask return 200 前 :",
             datetime.now().strftime("%H:%M:%S.%f")
         )
+
+        print(
+            f"⑧ [{reqid}] Flask 即將把 HTTP200 交給 Gunicorn :",
+            datetime.now().strftime("%H:%M:%S.%f")
+        )
+        
         print("=" * 70)
         print(
             f"✅ WEBHOOK END Request ID={reqid}",
