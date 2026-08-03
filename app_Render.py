@@ -201,6 +201,10 @@ def telegram_worker():
     print("Worker Queue ID=",id(telegram_queue))
     while True:
         # 等待 Queue 新訊息
+        print(
+            "等待 Queue...",
+            time.strftime("%H:%M:%S")
+        )
         message = telegram_queue.get()
         print("③ Queue取出，開始送TG",time.strftime("%H:%M:%S"))
 
