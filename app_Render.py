@@ -7,7 +7,6 @@
 #      | Webhook JSON
 #      ▼
 # Render Flask Server
-#
 #      |
 #      |
 #      ├── TELEGRAM_TOKEN
