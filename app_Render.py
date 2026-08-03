@@ -227,6 +227,14 @@ def telegram_worker():
             # 告知Queue：
             # 這筆完成
             telegram_queue.task_done()
+
+    except Exception:
+    
+            import traceback
+    
+            print("★★★★★ Worker Crash ★★★★★")
+    
+            traceback.print_exc()
 # =============================================================================
 # 第11步：啟動背景 Thread
 # daemon=True
@@ -427,6 +435,8 @@ def webhook():
         print("Webhook Queue ID=",id(telegram_queue))        
         telegram_queue.put(msg) 
         print("Worker Alive =", worker_thread.is_alive())
+        print("Worker Ident =", worker_thread.ident)
+        print("【W1】ident=",threading.get_ident())
         print("Queue Size =", telegram_queue.qsize())
         print("Queue Empty =", telegram_queue.empty())
         
