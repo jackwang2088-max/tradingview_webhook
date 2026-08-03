@@ -411,8 +411,11 @@ def webhook():
         # Queue 放入後立即返回
         # ========================================================
        
-        print("Webhook Queue ID=",id(telegram_queue))        
+        print("Webhook Queue ID=",id(telegram_queue))  
+        print("【Q1】準備放入Queue","Queue ID=",id(telegram_queue),time.strftime("%H:%M:%S"))
         telegram_queue.put(msg) 
+        print("【Q2】Queue放入完成","Queue size=",telegram_queue.qsize())
+        
         print("Worker Alive =", worker_thread.is_alive())
         print("Worker Ident =", worker_thread.ident)
         print("【W1】ident=",threading.get_ident())
