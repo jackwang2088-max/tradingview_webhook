@@ -6,7 +6,6 @@
 #      |
 #      | Webhook JSON
 #      ▼
-#
 # Render Flask Server
 #
 #      |
