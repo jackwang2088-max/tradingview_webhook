@@ -265,7 +265,7 @@ def test_telegram():
     # 模擬Webhook流程
     telegram_queue.put("🚀 測試訊息：Telegram 發送功能正常！")
     return ("✅ 測試訊息已加入Telegram Queue")
-
+test_telegram()
 # =============================================================================
 # 第13步：
 # TradingView Webhook 接收中心
