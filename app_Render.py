@@ -214,6 +214,7 @@ def telegram_worker():
                 traceback.print_exc()
             finally:
                 telegram_queue.task_done()
+                print("!!!!! telegram_worker 離開函式 !!!!!")
     except Exception:
         print("★★★★★ Worker Crash ★★★★★")
         traceback.print_exc()
