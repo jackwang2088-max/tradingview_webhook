@@ -165,7 +165,7 @@ def webhook():# 定義 webhook 處理函式
         # 強制將收到的內容解析成 JSON# 即使 Content-Type 不是 application/json 也會嘗試解析
         data = request.get_json(force=True)
         # 顯示解析後 JSON 區塊標題
-        print(f"[{reqid}] ========= 顯示解析後JSON =========")#[A1234567] ========= 顯示解析後JSON =========
+        print(f"[{reqid}] ==== 顯示解析後JSON(可能有二個訊號同時發出分別列出 =====")#[A1234567] ========= 顯示解析後JSON =========
         print(data)  # 印出解析完成的 Python Dictionary
         # 組合要傳送到 Telegram 的訊息內容
         msg = (
@@ -190,6 +190,7 @@ def webhook():# 定義 webhook 處理函式
         with lock:
             event_queue.append({"message": msg,"time": time.time()})        
             # 保留最近50筆
+            print("========== 保留最近50筆event_queue供 local_speaker 讀取 ==========")
             if len(event_queue) > 50:
                 event_queue.pop(0)    
             print("event_queue目前筆數 =", len(event_queue))
@@ -205,6 +206,7 @@ def webhook():# 定義 webhook 處理函式
         # 回傳成功給 TradingView
         # ==========================
         print("REQ END =", reqid)
+        print("========== 回傳webhook成功 ==========")
         return jsonify({# 回傳成功
             "status": "success",
             "message": "Data received"
