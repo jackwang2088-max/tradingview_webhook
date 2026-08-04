@@ -188,7 +188,7 @@ def webhook():# 定義 webhook 處理函式
         # 儲存事件供 local_speaker 讀取
         # ==========================
         with lock:
-            event_queue.append({"id": int(time.time()*1000),"data": data,"time": time.time()})
+            event_queue.append({"id": int(time.time()*1000),"data": data})
             # 保留最近50筆
             print("========== 保留最近50筆event_queue供 local_speaker 讀取 ==========")
             if len(event_queue) > 50:
