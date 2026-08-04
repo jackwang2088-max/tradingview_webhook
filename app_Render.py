@@ -138,28 +138,21 @@ event_queue = []         # 🧱 儲存最近收到的事件（FIFO）
 # 建立 Flask 路由，當收到 POST 請求到 /webhook 時執行 webhook() 函式
 @app.route('/webhook', methods=['POST'])
 def webhook():# 定義 webhook 處理函式
- # 函式說明：接收 TradingView 傳來的 Webhook JSON 資料並轉發到 Telegram
-    """接收 TradingView 的 Webhook JSON 並轉發到 Telegram + 本地語音端"""
-    """
-    📩 接收 TradingView 傳來的 JSON 訊號。
-    處理步驟：
-    1. 解析 JSON 資料
-    2. 翻譯（可選）
-    3. 建立唯一事件 ID
-    4. 推送到 Telegram
-    5. 推送到本地語音端
-    6. 儲存事件於 event_queue 供查詢
-    """
+    # ============================================================
+    # 建立唯一 Request ID
+    # 用來區分每一次 TradingView webhook
+    # ============================================================
+    import uuid
+    from datetime import datetime    
+    reqid = uuid.uuid4().hex[:8]    
+    print("=" * 60)
+    print(f"REQ START = {reqid}")
+    print("TIME =", datetime.utcnow())
     # ============================================================
     #加一個時間測量在 webhook 開頭：
     import time
     start_time = time.time()
     # ============================================================
-# =============================================================================
-#     global event_id
-# =============================================================================
-
-
     try:
         # 顯示原始收到的資料區塊標題
         print("========== 印出原始 Request BodRAW DATA 未解析前的位元組資料）==========")
@@ -167,11 +160,12 @@ def webhook():# 定義 webhook 處理函式
         # 顯示 HTTP Header 區塊標題
         print("========== 印出所有 HTTP Header 資訊 ==========")
         print(request.headers)# 印出所有 HTTP Header 資訊
+        print("X-Request-Start =", request.headers.get("X-Request-Start"))
 
         # 強制將收到的內容解析成 JSON# 即使 Content-Type 不是 application/json 也會嘗試解析
         data = request.get_json(force=True)
         # 顯示解析後 JSON 區塊標題
-        print("========== 顯示解析後JSON DATA區塊標題 ==========")
+        print(f"[{reqid}] ========= 顯示解析後JSON =========")#[A1234567] ========= 顯示解析後JSON =========
         print(data)  # 印出解析完成的 Python Dictionary
         # 組合要傳送到 Telegram 的訊息內容
         msg = (
@@ -210,6 +204,7 @@ def webhook():# 定義 webhook 處理函式
         # ==========================
         # 回傳成功給 TradingView
         # ==========================
+        print("REQ END =", reqid)
         return jsonify({# 回傳成功
             "status": "success",
             "message": "Data received"
@@ -219,6 +214,7 @@ def webhook():# 定義 webhook 處理函式
 
         import traceback
         print("========== ERROR ==========")
+        print("REQ ERROR =", reqid)
         print(str(e))
         traceback.print_exc()
         # ==========================
