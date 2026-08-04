@@ -231,7 +231,7 @@ print("【W0】Telegram Worker 啟動", time.strftime("%H:%M:%S"))
 #    daemon=True
 #).start()
 
-worker_thread = threading.Thread(target=telegram_worker,daemon=True,name="TG_WORKER")
+worker_thread = threading.Thread(target=telegram_worker,daemon=False,name="TG_WORKER")
 worker_thread.start()
 
 #print("Start Thread Object =", worker_thread)
