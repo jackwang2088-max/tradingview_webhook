@@ -196,11 +196,11 @@ def send_to_telegram(message: str):
 # =============================================================================
 def telegram_worker():    
     import traceback
-    print("Worker current =", threading.current_thread())
+    print("telegram_worker函數內的Worker current =", threading.current_thread())
     print("執行緒(Thread)的Worker ident   =", threading.get_ident())
     print("Worker native  =", threading.get_native_id())
     try:
-        print("【W1】Telegram背景執行緒啟動")
+        print("【W1】telegram_worker函數內的Telegram背景執行緒啟動")
         print("【W2】Queue 物件在記憶體中的ID位址Worker Queue ID=", id(telegram_queue))
         print("進入 while True")
         while True:
@@ -241,7 +241,7 @@ worker_thread.start()
 #print("Start native id =", worker_thread.native_id)
 #我希望你加 3 行，不要改其他程式
 print("===== Thread Start =====")
-print("worker_thread =", worker_thread)
+print("telegram_worker函數外的worker_thread =", worker_thread)
 print("worker alive =", worker_thread.is_alive())
 print("worker ident =", worker_thread.ident)
 print("worker native =", worker_thread.native_id)
