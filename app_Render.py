@@ -1,5 +1,5 @@
 from flask import Flask, request, jsonify
-print("🔥 VERSION 2026-06-02 05:35")
+print("🔥 VERSION 2026-08-04 15:35")
 import requests, json, os, threading 
 from deep_translator import GoogleTranslator
 
@@ -189,23 +189,24 @@ def webhook():# 定義 webhook 處理函式
         tg_start = time.time()
         # 發送 Telegram
         send_to_telegram(msg)# 呼叫 Telegram 發送函式
+        
+        # ==========================
+        # 儲存事件供 local_speaker 讀取
+        # ==========================
+        with lock:
+            event_queue.append({"message": msg,"time": time.time()})        
+            # 保留最近50筆
+            if len(event_queue) > 50:
+                event_queue.pop(0)    
+            print("event_queue目前筆數 =", len(event_queue))
         # ==========================
         # Telegram耗時
         # ==========================
-        print(
-            "Telegram區段耗時 =",
-            round(time.time() - tg_start, 3),
-            "秒"
-        )
-
+        print("Telegram區段耗時 =",round(time.time() - tg_start, 3),"秒")
         # ==========================
         # Webhook總耗時
         # ==========================
-        print(
-            "Webhook總耗時 =",
-            round(time.time() - start_time, 3),
-            "秒"
-        )
+        print("Webhook總耗時 =",round(time.time() - start_time, 3),"秒")
         # ==========================
         # 回傳成功給 TradingView
         # ==========================
@@ -217,28 +218,17 @@ def webhook():# 定義 webhook 處理函式
     except Exception as e:
 
         import traceback
-
         print("========== ERROR ==========")
-
         print(str(e))
-
         traceback.print_exc()
-
         # ==========================
         # 發生錯誤時也計算耗時
         # ==========================
-        print(
-            "Webhook失敗耗時 =",
-            round(time.time() - start_time, 3),
-            "秒"
-        )
-
+        print("Webhook失敗耗時 =",round(time.time() - start_time, 3),"秒")
         return jsonify({
             "status": "error",
             "message": str(e)
-        }), 500
-    
-    
+        }), 500  
 # =============================================================================
 # # ==========================
 # # 測試 Telegram 傳送訊息
@@ -251,6 +241,18 @@ def webhook():# 定義 webhook 處理函式
 #     send_to_telegram("🚀 測試訊息：Telegram 發送功能正常！")
 #     return "✅ 測試訊息已發送至 Telegram"
 # =============================================================================
+# ==========================
+# 提供 local_speaker 讀取事件
+# ==========================
+@app.route('/events/latest')
+def latest_events():
+
+    limit = int(request.args.get("limit",5))
+
+    with lock:
+        data = event_queue[-limit:]
+
+    return jsonify(data)
 
 # ==========================
 # 程式入口
