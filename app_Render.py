@@ -279,9 +279,16 @@ def test_telegram():
 # 這裡「不直接傳 Telegram」
 # 只負責快速接收
 # =============================================================================
-
 @app.route("/webhook",methods=["POST"])
 def webhook():
+    print("===== All Threads =====")
+    for t in threading.enumerate():
+        print(
+            "name =", t.name,
+            "alive =", t.is_alive(),
+            "ident =", t.ident
+        )
+    print("=======================")
     import uuid
     # ============================================================
     # 建立唯一 Request ID
