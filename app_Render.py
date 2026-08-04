@@ -204,7 +204,7 @@ def telegram_worker():
         print("【W2】Worker Queue ID=", id(telegram_queue))
         while True:
             print("【W3】等待 Queue...",time.strftime("%H:%M:%S"),"Thread=",threading.current_thread().name)
-            message = telegram_queue.get()
+            message = telegram_queue.get(timeout=60)
             print("【W4】Queue取出，開始送TG",message[:50])
             try:
                 send_to_telegram(message)
