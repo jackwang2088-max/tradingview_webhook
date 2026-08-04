@@ -197,7 +197,7 @@ def send_to_telegram(message: str):
 def telegram_worker():    
     import traceback
     print("telegram_worker函數內的Worker current =", threading.current_thread())
-    print("執行緒(Thread)的Worker ident   =", threading.get_ident())
+    print("telegram_worker()內執行緒(Thread)的Worker ident   =", threading.get_ident())
     print("Worker native  =", threading.get_native_id())
     try:
         print("【W1】telegram_worker函數內的Telegram背景執行緒啟動")
@@ -243,7 +243,7 @@ worker_thread.start()
 print("===== Thread Start =====")
 print("telegram_worker函數外的worker_thread =", worker_thread)
 print("worker alive =", worker_thread.is_alive())
-print("worker ident =", worker_thread.ident)
+print("telegram_worker()外執行緒(Thread)的Worker ident =", worker_thread.ident)
 print("worker native =", worker_thread.native_id)
 print("========================")
 
