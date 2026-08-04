@@ -197,11 +197,11 @@ def send_to_telegram(message: str):
 def telegram_worker():    
     import traceback
     print("Worker current =", threading.current_thread())
-    print("Worker ident   =", threading.get_ident())
+    print("執行緒(Thread)的Worker ident   =", threading.get_ident())
     print("Worker native  =", threading.get_native_id())
     try:
         print("【W1】Telegram背景執行緒啟動")
-        print("【W2】Worker Queue ID=", id(telegram_queue))
+        print("【W2】Queue 物件在記憶體中的ID位址Worker Queue ID=", id(telegram_queue))
         print("進入 while True")
         while True:
             print("【W3】等待 Queue...",time.strftime("%H:%M:%S"),"Thread=",threading.current_thread().name)
