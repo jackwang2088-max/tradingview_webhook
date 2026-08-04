@@ -202,6 +202,7 @@ def telegram_worker():
     try:
         print("【W1】Telegram背景執行緒啟動")
         print("【W2】Worker Queue ID=", id(telegram_queue))
+        print("進入 while True")
         while True:
             print("【W3】等待 Queue...",time.strftime("%H:%M:%S"),"Thread=",threading.current_thread().name)
             message = telegram_queue.get(timeout=60)
