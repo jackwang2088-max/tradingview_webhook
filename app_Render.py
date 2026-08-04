@@ -66,11 +66,11 @@ LOCAL_SPEAKER_URL = os.getenv("LOCAL_SPEAKER_URL", "").strip()#Render中的環�
 if not TELEGRAM_TOKEN or not CHAT_ID:
     print("❌ 請先在 Render 環境變數設定 TELEGRAM_TOKEN 與 CHAT_ID") 
 else:
-    print("✅ Telegram 設定讀取成功")
+    print("✅ Telegram 設定讀取成功，但實際上TG沒有收到")
 if not LOCAL_SPEAKER_URL:
     print("⚠️ 尚未設定 LOCAL_SPEAKER_URL（本地語音推播端 URL）")
 else:
-    print("✅ Local Speaker 設定讀取成功")
+    print("✅ Local Speaker 設定讀取成功，但實際上Local Speaker沒有收到")
 # =============================================================================
 # 第5步：測試用首頁
 # 瀏覽器輸入：
